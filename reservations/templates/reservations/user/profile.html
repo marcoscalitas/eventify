@@ -5,7 +5,7 @@
 {% block body %}
 <div class="form-container">
     <h2>My Profile</h2>
-    <form method="post" action="{% url 'profile' %}" enctype="multipart/form-data">
+    <form id="profileForm" method="post" action="{% url 'profile' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-row">
             <div class="form-group">
@@ -37,4 +37,33 @@
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+new JustValidate('#profileForm', { errorLabelCssClass: ['field-error'] })
+    .addField('#email', [
+        { rule: 'email', errorMessage: 'Enter a valid email.' },
+    ])
+    .addField('#avatar', [
+        {
+            validator: () => {
+                const input = document.getElementById('avatar');
+                if (!input.files || !input.files.length) return true;
+                const file = input.files[0];
+                const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                return allowed.includes(file.type);
+            },
+            errorMessage: 'Allowed: JPG, PNG, GIF, WebP.',
+        },
+        {
+            validator: () => {
+                const input = document.getElementById('avatar');
+                if (!input.files || !input.files.length) return true;
+                return input.files[0].size <= 5 * 1024 * 1024;
+            },
+            errorMessage: 'File must be smaller than 5MB.',
+        },
+    ]);
+</script>
 {% endblock %}

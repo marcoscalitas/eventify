@@ -48,6 +48,7 @@
     </footer>
 
     <script src="{% static 'reservations/app.js' %}"></script>
+    <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
     {% if user.is_authenticated %}
     <script>
     // Poll for unread notifications every 30 seconds

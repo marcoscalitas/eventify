@@ -440,6 +440,14 @@ a:hover { text-decoration: underline; }
     box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
 }
 
+/* Form validation */
+.field-error {
+    display: block;
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
 .form-row { display: flex; gap: 1rem; }
 .form-row .form-group { flex: 1; }
 
