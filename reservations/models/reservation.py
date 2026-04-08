@@ -5,22 +5,23 @@ from .event import Event
 
 
 class Reservation(models.Model):
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
     STATUS_CHOICES = [
-        ("confirmed", "Confirmed"),
-        ("cancelled", "Cancelled"),
+        (CONFIRMED, "Confirmed"),
+        (CANCELLED, "Cancelled"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reservations")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="reservations")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="confirmed")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=CONFIRMED)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "event")
 
     def cancel(self):
-        """Cancel this reservation and notify."""
-        self.status = "cancelled"
+        self.status = self.CANCELLED
         self.save()
 
         from ..helpers import notify_reservation_cancelled

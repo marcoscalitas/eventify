@@ -3,12 +3,7 @@ from datetime import date
 from django import forms
 
 from ..models import Event
-
-
-def validate_event_image_size(file):
-    max_size = 5 * 1024 * 1024  # 5 MB
-    if file.size > max_size:
-        raise forms.ValidationError("Image file size must be under 5 MB.")
+from .validators import validate_file_size
 
 
 class EventForm(forms.ModelForm):
@@ -26,7 +21,7 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["image"].validators.append(validate_event_image_size)
+        self.fields["image"].validators.append(validate_file_size)
 
     def clean_date(self):
         event_date = self.cleaned_data["date"]

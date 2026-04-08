@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from ..models import Event
 
+DESCRIPTION_TRUNCATE_LENGTH = 150
+
 
 class EventSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
@@ -20,16 +22,12 @@ class EventSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # Truncate description for list views
         if self.context.get("truncate"):
-            data["description"] = data["description"][:150]
-        # Return full URL for image
-        if instance.image:
-            request = self.context.get("request")
-            if request:
-                data["image"] = request.build_absolute_uri(instance.image.url)
-            else:
-                data["image"] = instance.image.url
-        else:
+            data["description"] = data["description"][:DESCRIPTION_TRUNCATE_LENGTH]
+
+        if not instance.image:
             data["image"] = ""
+        else:
+            request = self.context.get("request")
+            data["image"] = request.build_absolute_uri(instance.image.url) if request else instance.image.url
         return data

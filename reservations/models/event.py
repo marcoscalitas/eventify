@@ -24,7 +24,8 @@ class Event(models.Model):
         ordering = ["date", "time"]
 
     def spots_left(self):
-        confirmed = self.reservations.filter(status="confirmed").count()
+        from .reservation import Reservation
+        confirmed = self.reservations.filter(status=Reservation.CONFIRMED).count()
         return self.capacity - confirmed
 
     def average_rating(self):
@@ -44,15 +45,17 @@ class Event(models.Model):
         try:
             reservation, created = Reservation.objects.get_or_create(
                 user=user, event=self,
-                defaults={"status": "confirmed"}
+                defaults={"status": Reservation.CONFIRMED}
             )
-            if not created:
-                if reservation.status == "confirmed":
-                    return None, "Already reserved."
-                reservation.status = "confirmed"
-                reservation.save()
         except IntegrityError:
             return None, "Already reserved."
+
+        if not created and reservation.status == Reservation.CONFIRMED:
+            return None, "Already reserved."
+
+        if not created:
+            reservation.status = Reservation.CONFIRMED
+            reservation.save()
 
         from ..helpers import notify_reservation_confirmed
         notify_reservation_confirmed(user, self)
@@ -64,7 +67,7 @@ class Event(models.Model):
         from .review import Review
 
         has_reservation = Reservation.objects.filter(
-            user=user, event=self, status="confirmed"
+            user=user, event=self, status=Reservation.CONFIRMED
         ).exists()
         if not has_reservation:
             return None, "You must have a reservation to review."

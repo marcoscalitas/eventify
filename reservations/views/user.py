@@ -10,32 +10,36 @@ from ..forms import ProfileForm
 def profile(request):
     user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    if request.method == "POST":
-        form = ProfileForm(request.POST, request.FILES)
-        if form.is_valid():
-            user_profile.bio = form.cleaned_data["bio"]
-            if form.cleaned_data["avatar"]:
-                user_profile.avatar = form.cleaned_data["avatar"]
-            user_profile.save()
-
-            request.user.first_name = form.cleaned_data["first_name"]
-            request.user.last_name = form.cleaned_data["last_name"]
-            request.user.email = form.cleaned_data["email"]
-            request.user.save()
-
-            return redirect("profile")
-    else:
+    if request.method != "POST":
         form = ProfileForm(initial={
             "first_name": request.user.first_name,
             "last_name": request.user.last_name,
             "email": request.user.email,
             "bio": user_profile.bio,
         })
+        return render(request, "reservations/user/profile.html", {
+            "user_profile": user_profile,
+            "form": form,
+        })
 
-    return render(request, "reservations/user/profile.html", {
-        "user_profile": user_profile,
-        "form": form,
-    })
+    form = ProfileForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(request, "reservations/user/profile.html", {
+            "user_profile": user_profile,
+            "form": form,
+        })
+
+    user_profile.bio = form.cleaned_data["bio"]
+    if form.cleaned_data["avatar"]:
+        user_profile.avatar = form.cleaned_data["avatar"]
+    user_profile.save()
+
+    request.user.first_name = form.cleaned_data["first_name"]
+    request.user.last_name = form.cleaned_data["last_name"]
+    request.user.email = form.cleaned_data["email"]
+    request.user.save()
+
+    return redirect("profile")
 
 
 def profile_public(request, username):

@@ -9,24 +9,27 @@ from ..forms import LoginForm, RegisterForm
 
 
 def login_view(request):
-    if request.method == "POST":
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            user = authenticate(
-                request,
-                username=form.cleaned_data["username"],
-                password=form.cleaned_data["password"],
-            )
-            if user:
-                login(request, user)
-                return redirect("index")
-            return render(request, "reservations/auth/login.html", {
-                "message": "Invalid username and/or password.",
-            })
+    if request.method != "POST":
+        return render(request, "reservations/auth/login.html")
+
+    form = LoginForm(request.POST)
+    if not form.is_valid():
         return render(request, "reservations/auth/login.html", {
             "message": "Please fill in all fields correctly.",
         })
-    return render(request, "reservations/auth/login.html")
+
+    user = authenticate(
+        request,
+        username=form.cleaned_data["username"],
+        password=form.cleaned_data["password"],
+    )
+    if not user:
+        return render(request, "reservations/auth/login.html", {
+            "message": "Invalid username and/or password.",
+        })
+
+    login(request, user)
+    return redirect("index")
 
 
 def logout_view(request):
@@ -35,29 +38,29 @@ def logout_view(request):
 
 
 def register(request):
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            try:
-                user = User.objects.create_user(
-                    form.cleaned_data["username"],
-                    form.cleaned_data["email"],
-                    form.cleaned_data["password"],
-                )
-            except IntegrityError:
-                return render(request, "reservations/auth/register.html", {
-                    "message": "Username already taken.",
-                })
+    if request.method != "POST":
+        return render(request, "reservations/auth/register.html")
 
-            UserProfile.objects.create(user=user)
-            assign_role(user, form.cleaned_data["role"])
-
-            login(request, user)
-            return redirect("index")
-
+    form = RegisterForm(request.POST)
+    if not form.is_valid():
         first_error = next(iter(form.errors.values()))[0]
         return render(request, "reservations/auth/register.html", {
             "message": first_error,
         })
 
-    return render(request, "reservations/auth/register.html")
+    try:
+        user = User.objects.create_user(
+            form.cleaned_data["username"],
+            form.cleaned_data["email"],
+            form.cleaned_data["password"],
+        )
+    except IntegrityError:
+        return render(request, "reservations/auth/register.html", {
+            "message": "Username already taken.",
+        })
+
+    UserProfile.objects.create(user=user)
+    assign_role(user, form.cleaned_data["role"])
+
+    login(request, user)
+    return redirect("index")

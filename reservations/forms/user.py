@@ -1,11 +1,7 @@
 from django import forms
 from django.core.validators import MaxLengthValidator
 
-
-def validate_avatar_size(file):
-    max_size = 5 * 1024 * 1024  # 5 MB
-    if file.size > max_size:
-        raise forms.ValidationError("Avatar file size must be under 5 MB.")
+from .validators import validate_file_size
 
 
 class ProfileForm(forms.Form):
@@ -17,4 +13,4 @@ class ProfileForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 4}),
         required=False,
     )
-    avatar = forms.ImageField(required=False, validators=[validate_avatar_size])
+    avatar = forms.ImageField(required=False, validators=[validate_file_size])

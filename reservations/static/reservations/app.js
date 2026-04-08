@@ -1,17 +1,13 @@
 // Utility: get CSRF cookie for Django
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+    if (!document.cookie) return null;
+    for (const c of document.cookie.split(';')) {
+        const cookie = c.trim();
+        if (cookie.startsWith(name + '=')) {
+            return decodeURIComponent(cookie.substring(name.length + 1));
         }
     }
-    return cookieValue;
+    return null;
 }
 
 // Utility: escape HTML to prevent XSS
@@ -53,6 +49,9 @@ function setLoading(btn, loading) {
 }
 
 // Toast notification system
+const TOAST_DURATION = 4000;
+const RELOAD_DELAY = 800;
+
 function showToast(message, type = 'success') {
     let container = document.getElementById('toastContainer');
     if (!container) {
@@ -74,7 +73,32 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.remove('show');
         toast.addEventListener('transitionend', () => toast.remove());
-    }, 4000);
+    }, TOAST_DURATION);
+}
+
+// Utility: POST action with loading state, toast, and optional reload
+function postAction(btn, url) {
+    setLoading(btn, true);
+    return safeFetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    })
+    .catch(err => {
+        showToast(err.message, 'error');
+        setLoading(btn, false);
+        throw err;
+    });
+}
+
+// Utility: validate image file (type + size)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+function validateImageFile(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input.files || !input.files[0]) return true;
+    const file = input.files[0];
+    return ALLOWED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_IMAGE_SIZE;
 }
 
 // Mobile nav toggle

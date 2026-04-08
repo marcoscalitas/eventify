@@ -10,6 +10,12 @@ from ..models import Event, Notification, Reservation
 from ..forms import ReviewForm
 from ..serializers import EventSerializer, ReviewSerializer, NotificationSerializer
 
+EVENTS_PER_PAGE = 12
+
+
+def first_form_error(form):
+    return next(iter(form.errors.values()))[0]
+
 
 def ratelimited_error(request, exception):
     return JsonResponse({"error": "Too many requests. Please slow down."}, status=429)
@@ -20,7 +26,6 @@ def api_events(request):
     category = request.GET.get("category", "")
     search = request.GET.get("search", "")
     page = int(request.GET.get("page", 1))
-    per_page = 12
 
     events = Event.objects.filter(is_active=True).select_related("category", "organizer")
 
@@ -30,15 +35,15 @@ def api_events(request):
         events = events.filter(title__icontains=search)
 
     total = events.count()
-    start = (page - 1) * per_page
-    end = start + per_page
+    start = (page - 1) * EVENTS_PER_PAGE
+    end = start + EVENTS_PER_PAGE
     page_events = events[start:end]
 
     serializer = EventSerializer(page_events, many=True, context={"truncate": True, "request": request})
     return JsonResponse({
         "events": serializer.data,
         "page": page,
-        "total_pages": (total + per_page - 1) // per_page,
+        "total_pages": (total + EVENTS_PER_PAGE - 1) // EVENTS_PER_PAGE,
         "total": total,
     })
 
@@ -65,7 +70,7 @@ def api_reserve(request, event_id):
 @login_required
 def api_cancel(request, event_id):
     reservation = get_object_or_404(
-        Reservation, user=request.user, event_id=event_id, status="confirmed"
+        Reservation, user=request.user, event_id=event_id, status=Reservation.CONFIRMED
     )
     reservation.cancel()
 
@@ -88,8 +93,7 @@ def api_review(request, event_id):
 
     form = ReviewForm(data)
     if not form.is_valid():
-        first_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"error": first_error}, status=400)
+        return JsonResponse({"error": first_form_error(form)}, status=400)
 
     review, error = event.add_review(
         user=request.user,
