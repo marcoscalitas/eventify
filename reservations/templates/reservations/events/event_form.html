@@ -1,0 +1,60 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}{% if editing %}Edit Event{% else %}Create Event{% endif %} — Eventify{% endblock %}
+
+{% block body %}
+<div class="form-container">
+    <h2>{% if editing %}Edit Event{% else %}Create New Event{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="title">Event Title</label>
+            <input type="text" id="title" name="title" value="{% if editing %}{{ event.title }}{% endif %}" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="5" required>{% if editing %}{{ event.description }}{% endif %}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="category">Category (optional)</label>
+            <select id="category" name="category">
+                <option value="">No category</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}"
+                        {% if editing and event.category == category %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date"
+                    value="{% if editing %}{{ event.date|date:'Y-m-d' }}{% endif %}" required>
+            </div>
+            <div class="form-group">
+                <label for="time">Time</label>
+                <input type="time" id="time" name="time"
+                    value="{% if editing %}{{ event.time|time:'H:i' }}{% endif %}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location"
+                value="{% if editing %}{{ event.location }}{% endif %}" required>
+        </div>
+        <div class="form-group">
+            <label for="capacity">Capacity</label>
+            <input type="number" id="capacity" name="capacity" min="1"
+                value="{% if editing %}{{ event.capacity }}{% endif %}" required>
+        </div>
+        <div class="form-group">
+            <label for="image_url">Image URL (optional)</label>
+            <input type="url" id="image_url" name="image_url"
+                value="{% if editing %}{{ event.image_url }}{% endif %}">
+        </div>
+        <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Event{% endif %}</button>
+    </form>
+</div>
+{% endblock %}

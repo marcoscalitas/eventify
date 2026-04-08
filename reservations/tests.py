@@ -1,0 +1,898 @@
+import json
+from datetime import date, time, timedelta
+
+from django.contrib.auth.models import User
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+from rolepermissions.roles import assign_role
+
+from .models import Category, Event, Favorite, Notification, Reservation, Review, UserProfile
+
+
+class EventModelTests(TestCase):
+    def setUp(self):
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.category = Category.objects.create(name="Music")
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            category=self.category,
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=2,
+        )
+
+    def test_spots_left(self):
+        self.assertEqual(self.event.spots_left(), 2)
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        self.assertEqual(self.event.spots_left(), 1)
+
+    def test_average_rating_none(self):
+        self.assertIsNone(self.event.average_rating())
+
+    def test_average_rating(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        Review.objects.create(user=self.attendee, event=self.event, rating=4)
+        self.assertEqual(self.event.average_rating(), 4.0)
+
+    def test_reserve_success(self):
+        reservation, error = self.event.reserve(self.attendee)
+        self.assertIsNotNone(reservation)
+        self.assertIsNone(error)
+        self.assertEqual(reservation.status, "confirmed")
+        self.assertEqual(self.event.spots_left(), 1)
+
+    def test_reserve_duplicate(self):
+        self.event.reserve(self.attendee)
+        _, error = self.event.reserve(self.attendee)
+        self.assertEqual(error, "Already reserved.")
+
+    def test_reserve_full(self):
+        user2 = User.objects.create_user("user2", "u2@test.com", "pass1234")
+        self.event.reserve(self.attendee)
+        self.event.reserve(user2)
+        user3 = User.objects.create_user("user3", "u3@test.com", "pass1234")
+        _, error = self.event.reserve(user3)
+        self.assertEqual(error, "No spots available.")
+
+    def test_add_review_success(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        review, error = self.event.add_review(self.attendee, 5, "Great!")
+        self.assertIsNotNone(review)
+        self.assertIsNone(error)
+        self.assertEqual(review.rating, 5)
+
+    def test_add_review_no_reservation(self):
+        _, error = self.event.add_review(self.attendee, 5, "Great!")
+        self.assertEqual(error, "You must have a reservation to review.")
+
+    def test_add_review_duplicate(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        self.event.add_review(self.attendee, 5, "Great!")
+        _, error = self.event.add_review(self.attendee, 4, "Again")
+        self.assertEqual(error, "You already reviewed this event.")
+
+    def test_toggle_favorite(self):
+        result = self.event.toggle_favorite(self.attendee)
+        self.assertTrue(result)
+        self.assertTrue(Favorite.objects.filter(user=self.attendee, event=self.event).exists())
+
+        result = self.event.toggle_favorite(self.attendee)
+        self.assertFalse(result)
+        self.assertFalse(Favorite.objects.filter(user=self.attendee, event=self.event).exists())
+
+
+class ReservationModelTests(TestCase):
+    def setUp(self):
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=10,
+        )
+
+    def test_cancel(self):
+        reservation, _ = self.event.reserve(self.attendee)
+        reservation.cancel()
+        reservation.refresh_from_db()
+        self.assertEqual(reservation.status, "cancelled")
+
+
+class NotificationTests(TestCase):
+    def setUp(self):
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=10,
+        )
+
+    def test_reserve_creates_notifications(self):
+        self.event.reserve(self.attendee)
+        self.assertTrue(Notification.objects.filter(recipient=self.attendee).exists())
+        self.assertTrue(Notification.objects.filter(recipient=self.organizer).exists())
+
+    def test_cancel_creates_notifications(self):
+        reservation, _ = self.event.reserve(self.attendee)
+        count_before = Notification.objects.count()
+        reservation.cancel()
+        self.assertGreater(Notification.objects.count(), count_before)
+
+
+class FormTests(TestCase):
+    def test_register_form_passwords_mismatch(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data={
+            "username": "newuser",
+            "email": "new@test.com",
+            "password": "password123",
+            "confirmation": "different123",
+            "role": "attendee",
+        })
+        self.assertFalse(form.is_valid())
+
+    def test_register_form_valid(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data={
+            "username": "newuser",
+            "email": "new@test.com",
+            "password": "password123",
+            "confirmation": "password123",
+            "role": "attendee",
+        })
+        self.assertTrue(form.is_valid())
+
+    def test_event_form_invalid_capacity(self):
+        from .forms import EventForm
+        category = Category.objects.create(name="Music")
+        form = EventForm(data={
+            "title": "Test",
+            "description": "Desc",
+            "category": category.id,
+            "location": "Lisbon",
+            "date": date.today() + timedelta(days=7),
+            "time": "20:00",
+            "capacity": 0,
+        })
+        self.assertFalse(form.is_valid())
+
+    def test_review_form_valid(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 5, "comment": "Great!"})
+        self.assertTrue(form.is_valid())
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class APITests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        assign_role(self.attendee, "attendee")
+        assign_role(self.organizer, "organizer")
+        UserProfile.objects.create(user=self.attendee)
+        UserProfile.objects.create(user=self.organizer)
+        self.category = Category.objects.create(name="Music")
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            category=self.category,
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=5,
+        )
+
+    def test_api_events_list(self):
+        response = self.client.get(reverse("api_events"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data["events"]), 1)
+        self.assertEqual(data["events"][0]["title"], "Concert")
+
+    def test_api_events_search(self):
+        response = self.client.get(reverse("api_events"), {"search": "xyz"})
+        data = response.json()
+        self.assertEqual(len(data["events"]), 0)
+
+    def test_api_events_filter_category(self):
+        response = self.client.get(reverse("api_events"), {"category": "Music"})
+        data = response.json()
+        self.assertEqual(len(data["events"]), 1)
+
+    def test_api_reserve_unauthenticated(self):
+        response = self.client.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_api_reserve_success(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["message"], "Reservation confirmed!")
+
+    def test_api_reserve_duplicate(self):
+        self.client.login(username="attendee", password="pass1234")
+        self.client.post(reverse("api_reserve", args=[self.event.id]))
+        response = self.client.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(response.status_code, 400)
+
+    def test_api_cancel_success(self):
+        self.client.login(username="attendee", password="pass1234")
+        self.client.post(reverse("api_reserve", args=[self.event.id]))
+        response = self.client.post(reverse("api_cancel", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_review_success(self):
+        self.client.login(username="attendee", password="pass1234")
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        response = self.client.post(
+            reverse("api_review", args=[self.event.id]),
+            data=json.dumps({"rating": 5, "comment": "Awesome!"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["review"]["rating"], 5)
+
+    def test_api_review_no_reservation(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.post(
+            reverse("api_review", args=[self.event.id]),
+            data=json.dumps({"rating": 5, "comment": "Nope"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_api_toggle_favorite(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.post(reverse("api_favorite", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["favorited"])
+
+        response = self.client.post(reverse("api_favorite", args=[self.event.id]))
+        self.assertFalse(response.json()["favorited"])
+
+    def test_api_notifications(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.get(reverse("api_notifications"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("unread_count", data)
+
+    def test_api_mark_read(self):
+        self.client.login(username="attendee", password="pass1234")
+        Notification.objects.create(
+            recipient=self.attendee,
+            notification_type="event_updated",
+            title="Test",
+            message="Test notification",
+        )
+        self.client.post(reverse("api_mark_read"))
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.attendee, is_read=False).count(), 0
+        )
+
+
+class PageViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        assign_role(self.attendee, "attendee")
+        assign_role(self.organizer, "organizer")
+        UserProfile.objects.create(user=self.attendee)
+        UserProfile.objects.create(user=self.organizer)
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=5,
+        )
+
+    def test_index_page(self):
+        response = self.client.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_event_detail_page(self):
+        response = self.client.get(reverse("event_detail", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Concert")
+
+    def test_login_page(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_register_page(self):
+        response = self.client.get(reverse("register"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_profile_requires_login(self):
+        response = self.client.get(reverse("profile"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_notifications_requires_login(self):
+        response = self.client.get(reverse("notifications"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_create_event_requires_organizer(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.get(reverse("create_event"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_event_allowed_for_organizer(self):
+        self.client.login(username="organizer", password="pass1234")
+        response = self.client.get(reverse("create_event"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_my_events_requires_organizer(self):
+        self.client.login(username="attendee", password="pass1234")
+        response = self.client.get(reverse("my_events"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_public_profile(self):
+        response = self.client.get(reverse("profile_public", args=["organizer"]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_404_page(self):
+        response = self.client.get("/nonexistent-page/")
+        self.assertEqual(response.status_code, 404)
+
+
+class AuthTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_register_and_login(self):
+        response = self.client.post(reverse("register"), {
+            "username": "newuser",
+            "email": "new@test.com",
+            "password": "password123",
+            "confirmation": "password123",
+            "role": "attendee",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+
+    def test_register_duplicate_username(self):
+        User.objects.create_user("taken", "t@test.com", "pass1234")
+        response = self.client.post(reverse("register"), {
+            "username": "taken",
+            "email": "new@test.com",
+            "password": "password123",
+            "confirmation": "password123",
+            "role": "attendee",
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_success(self):
+        User.objects.create_user("testuser", "t@test.com", "pass1234")
+        response = self.client.post(reverse("login"), {
+            "username": "testuser",
+            "password": "pass1234",
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_login_failure(self):
+        response = self.client.post(reverse("login"), {
+            "username": "nobody",
+            "password": "wrong",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invalid")
+
+    def test_logout(self):
+        User.objects.create_user("testuser", "t@test.com", "pass1234")
+        self.client.login(username="testuser", password="pass1234")
+        response = self.client.get(reverse("logout"))
+        self.assertEqual(response.status_code, 302)
+
+
+class EndToEndOrganizerTests(TestCase):
+    """Full organizer journey: register → create event → edit → dashboard → attendees → CSV."""
+
+    def test_organizer_full_journey(self):
+        c = Client()
+
+        # 1. Register as organizer
+        response = c.post(reverse("register"), {
+            "username": "org_e2e",
+            "email": "org_e2e@test.com",
+            "password": "securepass123",
+            "confirmation": "securepass123",
+            "role": "organizer",
+        })
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(username="org_e2e")
+        self.assertTrue(UserProfile.objects.filter(user=user).exists())
+
+        # 2. Create a category (needed for event)
+        cat = Category.objects.create(name="Tech")
+
+        # 3. Create event
+        future = date.today() + timedelta(days=14)
+        response = c.post(reverse("create_event"), {
+            "title": "Django Workshop",
+            "description": "Learn Django end to end",
+            "category": cat.id,
+            "location": "Porto",
+            "date": future.isoformat(),
+            "time": "10:00",
+            "capacity": 30,
+            "image_url": "",
+        })
+        self.assertEqual(response.status_code, 302)
+        event = Event.objects.get(title="Django Workshop")
+        self.assertEqual(event.organizer, user)
+        self.assertEqual(event.capacity, 30)
+
+        # 4. Edit event — change capacity
+        response = c.post(reverse("edit_event", args=[event.id]), {
+            "title": "Django Workshop v2",
+            "description": "Updated description",
+            "category": cat.id,
+            "location": "Porto",
+            "date": future.isoformat(),
+            "time": "10:00",
+            "capacity": 50,
+            "image_url": "",
+        })
+        self.assertEqual(response.status_code, 302)
+        event.refresh_from_db()
+        self.assertEqual(event.title, "Django Workshop v2")
+        self.assertEqual(event.capacity, 50)
+
+        # 5. View organizer dashboard
+        response = c.get(reverse("my_events"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Django Workshop v2")
+
+        # 6. View event detail as organizer
+        response = c.get(reverse("event_detail", args=[event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Django Workshop v2")
+
+        # 7. Create an attendee who reserves
+        att = User.objects.create_user("att_e2e", "att@test.com", "pass1234")
+        assign_role(att, "attendee")
+        UserProfile.objects.create(user=att)
+        reservation, err = event.reserve(att)
+        self.assertIsNone(err)
+
+        # 8. View attendees page
+        response = c.get(reverse("attendees", args=[event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "att_e2e")
+
+        # 9. Export CSV
+        response = c.get(reverse("export_csv", args=[event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        content = response.content.decode()
+        self.assertIn("att_e2e", content)
+        self.assertIn("att@test.com", content)
+
+    def test_organizer_cannot_access_others_event(self):
+        """Organizer A can't view attendees or edit Organizer B's event."""
+        c = Client()
+
+        # Organizer A
+        org_a = User.objects.create_user("org_a", "a@test.com", "pass1234")
+        assign_role(org_a, "organizer")
+        UserProfile.objects.create(user=org_a)
+
+        # Organizer B creates event
+        org_b = User.objects.create_user("org_b", "b@test.com", "pass1234")
+        assign_role(org_b, "organizer")
+        UserProfile.objects.create(user=org_b)
+        event = Event.objects.create(
+            title="B's Event", description="Owned by B",
+            organizer=org_b, location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0), capacity=10,
+        )
+
+        # Organizer A tries to access B's attendees/CSV
+        c.login(username="org_a", password="pass1234")
+        response = c.get(reverse("attendees", args=[event.id]))
+        self.assertEqual(response.status_code, 404)
+
+        response = c.get(reverse("export_csv", args=[event.id]))
+        self.assertEqual(response.status_code, 404)
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class EndToEndAttendeeTests(TestCase):
+    """Full attendee journey: register → browse → reserve → review → favorite → cancel."""
+
+    def setUp(self):
+        self.organizer = User.objects.create_user("org", "org@test.com", "pass1234")
+        assign_role(self.organizer, "organizer")
+        UserProfile.objects.create(user=self.organizer)
+        self.category = Category.objects.create(name="Music")
+        self.event = Event.objects.create(
+            title="Jazz Night",
+            description="Live jazz",
+            category=self.category,
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=10),
+            time=time(21, 0),
+            capacity=3,
+        )
+
+    def test_attendee_full_journey(self):
+        c = Client()
+
+        # 1. Register as attendee
+        c.post(reverse("register"), {
+            "username": "jazz_fan",
+            "email": "fan@test.com",
+            "password": "jazzpass123",
+            "confirmation": "jazzpass123",
+            "role": "attendee",
+        })
+        user = User.objects.get(username="jazz_fan")
+
+        # 2. Browse events via homepage
+        response = c.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
+
+        # 3. Search events via API
+        response = c.get(reverse("api_events"), {"search": "Jazz"})
+        data = response.json()
+        self.assertEqual(len(data["events"]), 1)
+        self.assertEqual(data["events"][0]["title"], "Jazz Night")
+
+        # 4. Filter by category
+        response = c.get(reverse("api_events"), {"category": "Music"})
+        data = response.json()
+        self.assertEqual(len(data["events"]), 1)
+
+        # 5. View event detail
+        response = c.get(reverse("event_detail", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Jazz Night")
+
+        # 6. Reserve spot
+        response = c.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], "Reservation confirmed!")
+        self.assertEqual(self.event.spots_left(), 2)
+
+        # 7. Check notifications — reservation confirmed
+        response = c.get(reverse("api_notifications"))
+        data = response.json()
+        self.assertGreater(data["unread_count"], 0)
+
+        # 8. View my reservations page
+        response = c.get(reverse("my_reservations"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Jazz Night")
+
+        # 9. Submit a review
+        response = c.post(
+            reverse("api_review", args=[self.event.id]),
+            data=json.dumps({"rating": 5, "comment": "Amazing!"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["review"]["rating"], 5)
+
+        # Verify average rating updated
+        self.assertEqual(self.event.average_rating(), 5.0)
+
+        # 10. Toggle favorite ON
+        response = c.post(reverse("api_favorite", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["favorited"])
+
+        # 11. View favorites page
+        response = c.get(reverse("my_favorites"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Jazz Night")
+
+        # 12. Toggle favorite OFF
+        response = c.post(reverse("api_favorite", args=[self.event.id]))
+        self.assertFalse(response.json()["favorited"])
+
+        # 13. Cancel reservation
+        response = c.post(reverse("api_cancel", args=[self.event.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.event.spots_left(), 3)
+
+        # 14. Mark notifications as read
+        response = c.post(reverse("api_mark_read"))
+        self.assertEqual(response.status_code, 200)
+        notifs = Notification.objects.filter(recipient=user, is_read=False)
+        self.assertEqual(notifs.count(), 0)
+
+        # 15. View public organizer profile
+        response = c.get(reverse("profile_public", args=["org"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "org")
+
+    def test_attendee_cannot_access_organizer_pages(self):
+        c = Client()
+        att = User.objects.create_user("att_rbac", "rbac@test.com", "pass1234")
+        assign_role(att, "attendee")
+        UserProfile.objects.create(user=att)
+        c.login(username="att_rbac", password="pass1234")
+
+        # All organizer-only pages should return 403
+        self.assertEqual(c.get(reverse("create_event")).status_code, 403)
+        self.assertEqual(c.get(reverse("my_events")).status_code, 403)
+        self.assertEqual(c.get(reverse("attendees", args=[self.event.id])).status_code, 403)
+        self.assertEqual(c.get(reverse("export_csv", args=[self.event.id])).status_code, 403)
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class EndToEndCapacityTests(TestCase):
+    """Tests the full reservation flow when capacity is reached."""
+
+    def setUp(self):
+        self.org = User.objects.create_user("org", "org@test.com", "pass1234")
+        assign_role(self.org, "organizer")
+        UserProfile.objects.create(user=self.org)
+        self.event = Event.objects.create(
+            title="Small Workshop",
+            description="Only 2 spots",
+            organizer=self.org,
+            location="Faro",
+            date=date.today() + timedelta(days=5),
+            time=time(14, 0),
+            capacity=2,
+        )
+
+    def test_capacity_exhaustion_and_recovery(self):
+        """Fill all spots, fail to reserve, cancel one, reserve again."""
+        # Two attendees fill the event
+        att1 = User.objects.create_user("att1", "a1@test.com", "pass1234")
+        att2 = User.objects.create_user("att2", "a2@test.com", "pass1234")
+        att3 = User.objects.create_user("att3", "a3@test.com", "pass1234")
+        for u in [att1, att2, att3]:
+            assign_role(u, "attendee")
+            UserProfile.objects.create(user=u)
+
+        c1, c2, c3 = Client(), Client(), Client()
+        c1.login(username="att1", password="pass1234")
+        c2.login(username="att2", password="pass1234")
+        c3.login(username="att3", password="pass1234")
+
+        # att1 reserves — success
+        r = c1.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.event.spots_left(), 1)
+
+        # att2 reserves — success (last spot)
+        r = c2.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.event.spots_left(), 0)
+
+        # att3 tries — fails, no spots
+        r = c3.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("No spots", r.json()["error"])
+
+        # API also reflects 0 spots
+        r = c3.get(reverse("api_events"))
+        ev = r.json()["events"][0]
+        self.assertEqual(ev["spots_left"], 0)
+
+        # att1 cancels — frees a spot
+        r = c1.post(reverse("api_cancel", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.event.spots_left(), 1)
+
+        # att3 can now reserve
+        r = c3.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.event.spots_left(), 0)
+
+    def test_duplicate_reserve_returns_error(self):
+        att = User.objects.create_user("dup", "dup@test.com", "pass1234")
+        assign_role(att, "attendee")
+        UserProfile.objects.create(user=att)
+        c = Client()
+        c.login(username="dup", password="pass1234")
+
+        r = c.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+
+        r = c.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("Already", r.json()["error"])
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class EndToEndNotificationFlowTests(TestCase):
+    """Tests that all actions produce correct notifications for all parties."""
+
+    def setUp(self):
+        self.org = User.objects.create_user("org_nf", "org@test.com", "pass1234")
+        assign_role(self.org, "organizer")
+        UserProfile.objects.create(user=self.org)
+        self.att = User.objects.create_user("att_nf", "att@test.com", "pass1234")
+        assign_role(self.att, "attendee")
+        UserProfile.objects.create(user=self.att)
+        self.event = Event.objects.create(
+            title="Notification Test Event",
+            description="Testing notifs",
+            organizer=self.org,
+            location="Braga",
+            date=date.today() + timedelta(days=5),
+            time=time(18, 0),
+            capacity=10,
+        )
+        self.c_att = Client()
+        self.c_att.login(username="att_nf", password="pass1234")
+        self.c_org = Client()
+        self.c_org.login(username="org_nf", password="pass1234")
+
+    def test_reserve_notifies_both_parties(self):
+        r = self.c_att.post(reverse("api_reserve", args=[self.event.id]))
+        self.assertEqual(r.status_code, 200)
+
+        # Attendee gets notification
+        self.assertTrue(
+            Notification.objects.filter(recipient=self.att, is_read=False).exists()
+        )
+
+        # Organizer gets notification
+        self.assertTrue(
+            Notification.objects.filter(recipient=self.org, is_read=False).exists()
+        )
+
+    def test_cancel_notifies_both_parties(self):
+        self.c_att.post(reverse("api_reserve", args=[self.event.id]))
+        # Clear existing
+        Notification.objects.all().update(is_read=True)
+
+        self.c_att.post(reverse("api_cancel", args=[self.event.id]))
+
+        att_notifs = Notification.objects.filter(recipient=self.att, is_read=False)
+        org_notifs = Notification.objects.filter(recipient=self.org, is_read=False)
+        self.assertTrue(att_notifs.exists())
+        self.assertTrue(org_notifs.exists())
+
+    def test_review_notifies_organizer(self):
+        Reservation.objects.create(user=self.att, event=self.event, status="confirmed")
+        Notification.objects.all().delete()
+
+        self.c_att.post(
+            reverse("api_review", args=[self.event.id]),
+            data=json.dumps({"rating": 4, "comment": "Nice"}),
+            content_type="application/json",
+        )
+
+        org_notifs = Notification.objects.filter(recipient=self.org)
+        self.assertTrue(org_notifs.exists())
+        self.assertTrue(any("review" in n.notification_type for n in org_notifs))
+
+    def test_notifications_page_shows_all(self):
+        self.c_att.post(reverse("api_reserve", args=[self.event.id]))
+        response = self.c_att.get(reverse("notifications"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_mark_read_clears_all(self):
+        self.c_att.post(reverse("api_reserve", args=[self.event.id]))
+        self.c_att.post(reverse("api_mark_read"))
+        r = self.c_att.get(reverse("api_notifications"))
+        self.assertEqual(r.json()["unread_count"], 0)
+
+
+class EndToEndProfileTests(TestCase):
+    """Tests profile edit and public profile viewing."""
+
+    def test_edit_profile_and_view_public(self):
+        c = Client()
+        c.post(reverse("register"), {
+            "username": "profile_user",
+            "email": "prof@test.com",
+            "password": "profilepass123",
+            "confirmation": "profilepass123",
+            "role": "attendee",
+        })
+
+        # Edit profile
+        response = c.post(reverse("profile"), {
+            "first_name": "Marco",
+            "last_name": "Silva",
+            "email": "updated@test.com",
+            "bio": "I love events!",
+            "avatar_url": "",
+        })
+        self.assertEqual(response.status_code, 302)
+
+        user = User.objects.get(username="profile_user")
+        self.assertEqual(user.first_name, "Marco")
+        self.assertEqual(user.last_name, "Silva")
+        self.assertEqual(user.profile.bio, "I love events!")
+
+        # View own profile page
+        response = c.get(reverse("profile"))
+        self.assertEqual(response.status_code, 200)
+
+        # Another user views the public profile
+        c2 = Client()
+        response = c2.get(reverse("profile_public", args=["profile_user"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "profile_user")
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class EndToEndSearchAndFilterTests(TestCase):
+    """Tests event search, category filter, and pagination via the API."""
+
+    def setUp(self):
+        org = User.objects.create_user("org_sf", "org@test.com", "pass1234")
+        cat1 = Category.objects.create(name="Sports")
+        cat2 = Category.objects.create(name="Technology")
+        base_date = date.today() + timedelta(days=5)
+
+        for i in range(15):
+            Event.objects.create(
+                title=f"Sports Event {i}" if i < 10 else f"Tech Talk {i}",
+                description=f"Description {i}",
+                category=cat1 if i < 10 else cat2,
+                organizer=org,
+                location="Lisbon",
+                date=base_date + timedelta(days=i),
+                time=time(10, 0),
+                capacity=50,
+            )
+
+    def test_search_filters_correctly(self):
+        c = Client()
+        r = c.get(reverse("api_events"), {"search": "Tech Talk"})
+        data = r.json()
+        self.assertEqual(len(data["events"]), 5)
+        self.assertTrue(all("Tech" in e["title"] for e in data["events"]))
+
+    def test_category_filter(self):
+        c = Client()
+        r = c.get(reverse("api_events"), {"category": "Sports"})
+        data = r.json()
+        self.assertEqual(len(data["events"]), 10)
+
+    def test_pagination(self):
+        c = Client()
+        r1 = c.get(reverse("api_events"), {"page": 1})
+        d1 = r1.json()
+        self.assertIn("total_pages", d1)
+        self.assertGreater(d1["total_pages"], 1)
+
+        r2 = c.get(reverse("api_events"), {"page": 2})
+        d2 = r2.json()
+        ids_p1 = {e["id"] for e in d1["events"]}
+        ids_p2 = {e["id"] for e in d2["events"]}
+        self.assertEqual(len(ids_p1 & ids_p2), 0)  # No overlap
+
+    def test_empty_search(self):
+        c = Client()
+        r = c.get(reverse("api_events"), {"search": "nonexistent_xyz"})
+        self.assertEqual(len(r.json()["events"]), 0)
+
+    def test_combined_search_and_category(self):
+        c = Client()
+        r = c.get(reverse("api_events"), {"search": "Event", "category": "Sports"})
+        data = r.json()
+        self.assertTrue(all("Sports" == e.get("category") or "Event" in e["title"]
+                            for e in data["events"]))

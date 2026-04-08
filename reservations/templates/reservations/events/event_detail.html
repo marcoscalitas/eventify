@@ -1,0 +1,231 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}{{ event.title }} — Eventify{% endblock %}
+
+{% block body %}
+<div class="event-detail">
+    {% if event.image_url %}
+        <div class="event-detail-image" style="background-image: url('{{ event.image_url }}')"></div>
+    {% endif %}
+
+    <div class="event-detail-content">
+        <div class="event-detail-header">
+            {% if event.category %}
+                <span class="event-category">{{ event.category.name }}</span>
+            {% endif %}
+            {% if average_rating %}
+                <span class="event-rating-lg">★ {{ average_rating }}</span>
+            {% endif %}
+            <h1>{{ event.title }}</h1>
+            <p class="event-meta">
+                Organized by <a href="{% url 'profile_public' event.organizer.username %}">{{ event.organizer.username }}</a>
+            </p>
+        </div>
+
+        <div class="event-detail-info">
+            <div class="info-row"><span>📍</span><span><strong>Location:</strong> {{ event.location }}</span></div>
+            <div class="info-row"><span>📅</span><span><strong>Date:</strong> {{ event.date }}</span></div>
+            <div class="info-row"><span>🕐</span><span><strong>Time:</strong> {{ event.time }}</span></div>
+            <div class="info-row">
+                <span>👥</span>
+                <span><strong>Capacity:</strong> {{ event.capacity }}
+                    (<span id="spotsLeft">{{ spots_left }}</span> spots left)
+                </span>
+            </div>
+        </div>
+
+        <div class="event-detail-description">
+            <h3>About this event</h3>
+            <p>{{ event.description|linebreaksbr }}</p>
+        </div>
+
+        <div class="event-actions" id="eventActions">
+            {% if user.is_authenticated %}
+                {% if user == event.organizer %}
+                    <a href="{% url 'edit_event' event.id %}" class="btn btn-secondary">Edit Event</a>
+                {% else %}
+                    <div class="action-buttons">
+                        {% if user_reserved %}
+                            <button class="btn btn-danger" id="cancelBtn" data-event-id="{{ event.id }}">
+                                Cancel Reservation
+                            </button>
+                        {% elif spots_left > 0 %}
+                            <button class="btn btn-primary" id="reserveBtn" data-event-id="{{ event.id }}">
+                                Reserve My Spot
+                            </button>
+                        {% else %}
+                            <span class="badge badge-full">Fully Booked</span>
+                        {% endif %}
+
+                        <button class="btn btn-fav {% if user_favorited %}active{% endif %}" id="favBtn"
+                            data-event-id="{{ event.id }}">
+                            {{ user_favorited|yesno:"♥ Favorited,♡ Favorite" }}
+                        </button>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p><a href="{% url 'login' %}">Login</a> to reserve your spot.</p>
+            {% endif %}
+        </div>
+
+        <!-- Reviews section -->
+        <div class="reviews-section">
+            <h3>Reviews</h3>
+
+            {% if user.is_authenticated and user_reserved and not user_reviewed and user != event.organizer %}
+                <div class="review-form" id="reviewForm">
+                    <div class="star-rating" id="starRating" role="group" aria-label="Rating">
+                        <button type="button" data-value="1" aria-label="1 star">★</button>
+                        <button type="button" data-value="2" aria-label="2 stars">★</button>
+                        <button type="button" data-value="3" aria-label="3 stars">★</button>
+                        <button type="button" data-value="4" aria-label="4 stars">★</button>
+                        <button type="button" data-value="5" aria-label="5 stars">★</button>
+                    </div>
+                    <label for="reviewComment" class="sr-only">Your review</label>
+                    <textarea id="reviewComment" placeholder="Share your experience..." rows="3"></textarea>
+                    <button class="btn btn-primary btn-sm" id="submitReview" data-event-id="{{ event.id }}">Submit Review</button>
+                </div>
+            {% endif %}
+
+            <div id="reviewsList">
+                {% for review in reviews %}
+                    <div class="review-item">
+                        <div class="review-header">
+                            <strong>{{ review.user.username }}</strong>
+                            <span class="review-stars">{{ review.rating }}★</span>
+                            <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        {% if review.comment %}
+                            <p class="review-comment">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="empty-message" id="noReviews">No reviews yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Reserve
+    const reserveBtn = document.getElementById('reserveBtn');
+    if (reserveBtn) {
+        reserveBtn.addEventListener('click', () => {
+            setLoading(reserveBtn, true);
+            safeFetch(`/api/event/${reserveBtn.dataset.eventId}/reserve`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            })
+            .then(data => {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 800);
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+                setLoading(reserveBtn, false);
+            });
+        });
+    }
+
+    // Cancel
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (!confirm('Cancel your reservation?')) return;
+            setLoading(cancelBtn, true);
+            safeFetch(`/api/event/${cancelBtn.dataset.eventId}/cancel`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            })
+            .then(data => {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 800);
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+                setLoading(cancelBtn, false);
+            });
+        });
+    }
+
+    // Favorite toggle
+    const favBtn = document.getElementById('favBtn');
+    if (favBtn) {
+        favBtn.addEventListener('click', () => {
+            setLoading(favBtn, true);
+            safeFetch(`/api/event/${favBtn.dataset.eventId}/favorite`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            })
+            .then(data => {
+                favBtn.classList.toggle('active', data.favorited);
+                favBtn.textContent = data.favorited ? '♥ Favorited' : '♡ Favorite';
+                showToast(data.favorited ? 'Added to favorites' : 'Removed from favorites');
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+                setLoading(favBtn, false);
+            });
+        });
+    }
+
+    // Star rating
+    let selectedRating = 0;
+    const starRating = document.getElementById('starRating');
+    if (starRating) {
+        starRating.querySelectorAll('button').forEach(star => {
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.value);
+                starRating.querySelectorAll('button').forEach((s, i) => {
+                    s.classList.toggle('active', i < selectedRating);
+                });
+            });
+        });
+    }
+
+    // Submit review
+    const submitReview = document.getElementById('submitReview');
+    if (submitReview) {
+        submitReview.addEventListener('click', () => {
+            if (selectedRating === 0) return showToast('Please select a rating.', 'error');
+            const comment = document.getElementById('reviewComment').value;
+            setLoading(submitReview, true);
+            safeFetch(`/api/event/${submitReview.dataset.eventId}/review`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ rating: selectedRating, comment }),
+            })
+            .then(data => {
+                showToast(data.message);
+                const noReviews = document.getElementById('noReviews');
+                if (noReviews) noReviews.remove();
+                const reviewsList = document.getElementById('reviewsList');
+                const review = data.review;
+                reviewsList.insertAdjacentHTML('afterbegin', `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <strong>${escapeHtml(review.username)}</strong>
+                            <span class="review-stars">${review.rating}★</span>
+                            <span class="review-date">${escapeHtml(review.created_at)}</span>
+                        </div>
+                        ${review.comment ? `<p class="review-comment">${escapeHtml(review.comment)}</p>` : ''}
+                    </div>
+                `);
+                document.getElementById('reviewForm').remove();
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+                setLoading(submitReview, false);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

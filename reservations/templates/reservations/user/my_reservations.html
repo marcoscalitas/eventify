@@ -1,0 +1,53 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}My Reservations — Eventify{% endblock %}
+
+{% block body %}
+<h2>My Reservations</h2>
+
+{% if reservations %}
+    <div class="events-list">
+        {% for reservation in reservations %}
+            <div class="event-list-item" id="res-{{ reservation.id }}">
+                <div class="event-list-info">
+                    <h3><a href="{% url 'event_detail' reservation.event.id %}">{{ reservation.event.title }}</a></h3>
+                    <p>📅 {{ reservation.event.date }} at {{ reservation.event.time }} — 📍 {{ reservation.event.location }}</p>
+                    <p class="reservation-status confirmed">✅ Confirmed — Booked {{ reservation.created_at|date:"M d, Y" }}</p>
+                </div>
+                <div class="event-list-actions">
+                    <button class="btn btn-danger btn-sm cancel-res-btn"
+                        data-event-id="{{ reservation.event.id }}"
+                        data-res-id="{{ reservation.id }}">Cancel</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-message">No reservations yet. <a href="{% url 'index' %}">Browse events!</a></p>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.cancel-res-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!confirm('Cancel this reservation?')) return;
+            setLoading(btn, true);
+            safeFetch(`/api/event/${btn.dataset.eventId}/cancel`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            })
+            .then(data => {
+                showToast(data.message);
+                document.getElementById(`res-${btn.dataset.resId}`).remove();
+            })
+            .catch(err => {
+                showToast(err.message, 'error');
+                setLoading(btn, false);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

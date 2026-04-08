@@ -1,0 +1,11 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}Server Error — Eventify{% endblock %}
+
+{% block body %}
+<div class="error-page">
+    <h1>500</h1>
+    <p>Something went wrong on our end. Please try again later.</p>
+    <a href="{% url 'index' %}" class="btn btn-primary">Back to Events</a>
+</div>
+{% endblock %}

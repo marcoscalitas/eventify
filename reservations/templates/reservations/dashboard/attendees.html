@@ -1,0 +1,40 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}Attendees — {{ event.title }}{% endblock %}
+
+{% block body %}
+<div class="dashboard-header">
+    <div>
+        <h2>Attendees</h2>
+        <p class="subtitle">{{ event.title }} — {{ reservations|length }} confirmed</p>
+    </div>
+    <a href="{% url 'export_csv' event.id %}" class="btn btn-secondary">📥 Export CSV</a>
+</div>
+
+{% if reservations %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Reserved At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><a href="{% url 'profile_public' reservation.user.username %}">{{ reservation.user.username }}</a></td>
+                    <td>{{ reservation.user.email }}</td>
+                    <td>{{ reservation.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="empty-message">No attendees yet.</p>
+{% endif %}
+
+<a href="{% url 'my_events' %}" class="btn btn-secondary" style="margin-top: 1rem;">← Back to My Events</a>
+{% endblock %}

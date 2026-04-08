@@ -1,0 +1,36 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}My Events — Eventify{% endblock %}
+
+{% block body %}
+<div class="dashboard-header">
+    <h2>My Events</h2>
+    <a href="{% url 'create_event' %}" class="btn btn-primary">+ New Event</a>
+</div>
+
+{% if event_stats %}
+    <div class="events-list">
+        {% for item in event_stats %}
+            <div class="event-list-item">
+                <div class="event-list-info">
+                    <h3><a href="{% url 'event_detail' item.event.id %}">{{ item.event.title }}</a></h3>
+                    <p>📅 {{ item.event.date }} at {{ item.event.time }} — 📍 {{ item.event.location }}</p>
+                    <div class="stats-row">
+                        <span class="stat">👥 {{ item.confirmed }} / {{ item.event.capacity }} reserved</span>
+                        <span class="stat">📊 {{ item.occupancy }}% occupancy</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ item.occupancy }}%"></div>
+                    </div>
+                </div>
+                <div class="event-list-actions">
+                    <a href="{% url 'attendees' item.event.id %}" class="btn btn-secondary btn-sm">Attendees</a>
+                    <a href="{% url 'edit_event' item.event.id %}" class="btn btn-secondary btn-sm">Edit</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-message">No events created yet. <a href="{% url 'create_event' %}">Create your first event!</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "reservations/layout.html" %}
+
+{% block title %}Notifications — Eventify{% endblock %}
+
+{% block body %}
+<div class="notifications-page">
+    <div class="dashboard-header">
+        <div>
+            <h2>Notifications</h2>
+            <p class="subtitle">Stay up to date with your events and reservations.</p>
+        </div>
+    </div>
+
+    <div class="notifications-list">
+        {% for notif in notifications %}
+            <div class="notification-item {% if not notif.is_read %}unread{% endif %}">
+                <div class="notification-icon">
+                    {% if notif.notification_type == "reservation_confirmed" %}🎟️
+                    {% elif notif.notification_type == "reservation_cancelled" %}❌
+                    {% elif notif.notification_type == "new_review" %}⭐
+                    {% elif notif.notification_type == "event_updated" %}📝
+                    {% elif notif.notification_type == "event_reminder" %}⏰
+                    {% else %}🔔{% endif %}
+                </div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <strong>{{ notif.title }}</strong>
+                        <span class="notification-time">{{ notif.created_at|timesince }} ago</span>
+                    </div>
+                    <p class="notification-message">{{ notif.message }}</p>
+                    {% if notif.link %}
+                        <a href="{{ notif.link }}" class="notification-link">View details →</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p class="empty-message">No notifications yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
