@@ -24,7 +24,7 @@
         <div class="events-grid">
             {% for event in events %}
                 <a href="{% url 'event_detail' event.id %}" class="event-card">
-                    <div class="event-card-image" style="background-image: url('{{ event.image_url }}')">
+                    <div class="event-card-image" style="background-image: url('{% if event.image %}{{ event.image.url }}{% endif %}')">
                         {% if event.category %}
                             <span class="event-category">{{ event.category.name }}</span>
                         {% endif %}

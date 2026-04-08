@@ -14,7 +14,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             "id", "title", "description", "category", "location",
-            "date", "time", "capacity", "spots_left", "image_url",
+            "date", "time", "capacity", "spots_left", "image",
             "organizer", "average_rating",
         ]
 
@@ -23,4 +23,13 @@ class EventSerializer(serializers.ModelSerializer):
         # Truncate description for list views
         if self.context.get("truncate"):
             data["description"] = data["description"][:150]
+        # Return full URL for image
+        if instance.image:
+            request = self.context.get("request")
+            if request:
+                data["image"] = request.build_absolute_uri(instance.image.url)
+            else:
+                data["image"] = instance.image.url
+        else:
+            data["image"] = ""
         return data

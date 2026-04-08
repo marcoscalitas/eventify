@@ -34,7 +34,7 @@ def api_events(request):
     end = start + per_page
     page_events = events[start:end]
 
-    serializer = EventSerializer(page_events, many=True, context={"truncate": True})
+    serializer = EventSerializer(page_events, many=True, context={"truncate": True, "request": request})
     return JsonResponse({
         "events": serializer.data,
         "page": page,

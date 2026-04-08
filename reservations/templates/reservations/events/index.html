@@ -58,7 +58,7 @@
                 }
                 grid.innerHTML = data.events.map(event => `
                     <a href="/event/${event.id}" class="event-card">
-                        <div class="event-card-image" style="background-image: url('${escapeHtml(event.image_url || '')}')">
+                        <div class="event-card-image" style="background-image: url('${escapeHtml(event.image || '')}')">
                             ${event.category ? `<span class="event-category">${escapeHtml(event.category)}</span>` : ''}
                             ${event.average_rating ? `<span class="event-rating">★ ${event.average_rating}</span>` : ''}
                         </div>

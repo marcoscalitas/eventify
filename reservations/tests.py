@@ -404,22 +404,9 @@ class BruteFormValidationTests(TestCase):
         form = EventForm(data=data)
         self.assertTrue(form.is_valid())
 
-    def test_event_invalid_image_url(self):
+    def test_event_no_image_ok(self):
         from .forms import EventForm
-        form = EventForm(data=self._event_data(image_url="not-a-url"))
-        self.assertFalse(form.is_valid())
-        self.assertIn("image_url", form.errors)
-
-    def test_event_valid_image_url(self):
-        from .forms import EventForm
-        form = EventForm(data=self._event_data(
-            image_url="https://example.com/image.jpg"
-        ))
-        self.assertTrue(form.is_valid())
-
-    def test_event_empty_image_url_ok(self):
-        from .forms import EventForm
-        form = EventForm(data=self._event_data(image_url=""))
+        form = EventForm(data=self._event_data())
         self.assertTrue(form.is_valid())
 
     # ── ProfileForm ──────────────────────────────────────────
@@ -621,15 +608,15 @@ class BruteViewValidationTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Event.objects.count(), 0)
 
-    def test_create_event_bad_image_url_rejected(self):
+    def test_create_event_without_image_ok(self):
         self.client.login(username="org", password="pass1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "Ev", "description": "desc", "location": "Here",
+            "title": "NoImg", "description": "desc", "location": "Here",
             "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": 10, "image_url": "not-a-url",
+            "time": "20:00", "capacity": 10,
         })
-        self.assertEqual(r.status_code, 200)
-        self.assertFalse(Event.objects.filter(title="Ev").exists())
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Event.objects.filter(title="NoImg").exists())
 
     # ── Profile view ─────────────────────────────────────────
 
@@ -1019,7 +1006,6 @@ class EndToEndOrganizerTests(TestCase):
             "date": future.isoformat(),
             "time": "10:00",
             "capacity": 30,
-            "image_url": "",
         })
         self.assertEqual(response.status_code, 302)
         event = Event.objects.get(title="Django Workshop")
@@ -1035,7 +1021,6 @@ class EndToEndOrganizerTests(TestCase):
             "date": future.isoformat(),
             "time": "10:00",
             "capacity": 50,
-            "image_url": "",
         })
         self.assertEqual(response.status_code, 302)
         event.refresh_from_db()

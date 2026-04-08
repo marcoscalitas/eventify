@@ -5,7 +5,7 @@
 {% block body %}
 <div class="form-container">
     <h2>{% if editing %}Edit Event{% else %}Create New Event{% endif %}</h2>
-    <form id="eventForm" method="post">
+    <form id="eventForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-group">
             <label for="title">Event Title</label>
@@ -50,9 +50,13 @@
                 value="{% if editing %}{{ event.capacity }}{% endif %}">
         </div>
         <div class="form-group">
-            <label for="image_url">Image URL (optional)</label>
-            <input type="url" id="image_url" name="image_url"
-                value="{% if editing %}{{ event.image_url }}{% endif %}">
+            <label for="image">Event Image (optional)</label>
+            {% if editing and event.image %}
+                <div class="current-image-preview">
+                    <img src="{{ event.image.url }}" alt="Current image" class="profile-avatar-small">
+                </div>
+            {% endif %}
+            <input type="file" id="image" name="image" accept="image/*">
         </div>
         <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Event{% endif %}</button>
     </form>
@@ -84,6 +88,20 @@ const validator = new JustValidate('#eventForm', { errorLabelCssClass: ['field-e
     .addField('#capacity', [
         { rule: 'required', errorMessage: 'Capacity is required.' },
         { rule: 'minNumber', value: 1, errorMessage: 'Must be at least 1.' },
+    ])
+    .addField('#image', [
+        {
+            validator: (value, fields) => {
+                const input = document.getElementById('image');
+                if (!input.files || !input.files[0]) return true;
+                const file = input.files[0];
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) return false;
+                if (file.size > 5 * 1024 * 1024) return false;
+                return true;
+            },
+            errorMessage: 'Image must be JPEG, PNG, GIF or WebP and under 5 MB.',
+        },
     ]);
 </script>
 {% endblock %}

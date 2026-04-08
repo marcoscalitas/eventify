@@ -4,8 +4,8 @@
 
 {% block body %}
 <div class="event-detail">
-    {% if event.image_url %}
-        <div class="event-detail-image" style="background-image: url('{{ event.image_url }}')"></div>
+    {% if event.image %}
+        <div class="event-detail-image" style="background-image: url('{{ event.image.url }}')"></div>
     {% endif %}
 
     <div class="event-detail-content">

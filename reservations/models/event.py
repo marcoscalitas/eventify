@@ -15,7 +15,7 @@ class Event(models.Model):
     date = models.DateField()
     time = models.TimeField()
     capacity = models.PositiveIntegerField()
-    image_url = models.URLField(blank=True, default="")
+    image = models.ImageField(upload_to="events/", blank=True, default="")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

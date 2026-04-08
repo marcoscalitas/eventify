@@ -9,7 +9,7 @@
     <div class="events-grid">
         {% for fav in favorites %}
             <a href="{% url 'event_detail' fav.event.id %}" class="event-card">
-                <div class="event-card-image" style="background-image: url('{{ fav.event.image_url }}')">
+                <div class="event-card-image" style="background-image: url('{% if fav.event.image %}{{ fav.event.image.url }}{% endif %}')">
                     {% if fav.event.category %}
                         <span class="event-category">{{ fav.event.category.name }}</span>
                     {% endif %}
