@@ -583,6 +583,13 @@ a:hover { text-decoration: underline; }
     object-fit: cover;
 }
 
+.profile-avatar-small {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .profile-avatar-placeholder {
     width: 80px;
     height: 80px;

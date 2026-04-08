@@ -11,10 +11,11 @@ def profile(request):
     user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        form = ProfileForm(request.POST)
+        form = ProfileForm(request.POST, request.FILES)
         if form.is_valid():
             user_profile.bio = form.cleaned_data["bio"]
-            user_profile.avatar_url = form.cleaned_data["avatar_url"]
+            if form.cleaned_data["avatar"]:
+                user_profile.avatar = form.cleaned_data["avatar"]
             user_profile.save()
 
             request.user.first_name = form.cleaned_data["first_name"]
@@ -29,7 +30,6 @@ def profile(request):
             "last_name": request.user.last_name,
             "email": request.user.email,
             "bio": user_profile.bio,
-            "avatar_url": user_profile.avatar_url,
         })
 
     return render(request, "reservations/user/profile.html", {

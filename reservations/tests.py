@@ -817,7 +817,6 @@ class EndToEndProfileTests(TestCase):
             "last_name": "Silva",
             "email": "updated@test.com",
             "bio": "I love events!",
-            "avatar_url": "",
         })
         self.assertEqual(response.status_code, 302)
 

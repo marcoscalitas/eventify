@@ -5,8 +5,8 @@
 {% block body %}
 <div class="profile-public">
     <div class="profile-header">
-        {% if user_profile.avatar_url %}
-            <img src="{{ user_profile.avatar_url }}" alt="{{ profile_user.username }}" class="profile-avatar">
+        {% if user_profile.avatar %}
+            <img src="{{ user_profile.avatar.url }}" alt="{{ profile_user.username }}" class="profile-avatar">
         {% else %}
             <div class="profile-avatar-placeholder">{{ profile_user.username|first|upper }}</div>
         {% endif %}

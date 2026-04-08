@@ -27,6 +27,7 @@ Thumbs.db
 # Django
 *.log
 staticfiles/
+media/
 
 # Coverage
 htmlcov/
