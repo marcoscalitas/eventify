@@ -1,4 +1,5 @@
 {% extends "reservations/layout.html" %}
+{% load static %}
 
 {% block title %}{{ event.title }} — Eventify{% endblock %}
 
@@ -45,7 +46,7 @@
                     <a href="{% url 'edit_event' event.id %}" class="btn btn-secondary">Edit Event</a>
                 {% else %}
                     <div class="action-buttons">
-                        {% if user_reserved %}
+                        {% if user_reservation %}
                             <button class="btn btn-danger" id="cancelBtn" data-event-id="{{ event.id }}">
                                 Cancel Reservation
                             </button>
@@ -72,7 +73,7 @@
         <div class="reviews-section">
             <h3>Reviews</h3>
 
-            {% if user.is_authenticated and user_reserved and not user_reviewed and user != event.organizer %}
+            {% if user.is_authenticated and user_reservation and not user_reviewed and user != event.organizer %}
                 <div class="review-form" id="reviewForm">
                     <div class="star-rating" id="starRating" role="group" aria-label="Rating">
                         <button type="button" data-value="1" aria-label="1 star">★</button>
@@ -109,123 +110,5 @@
 {% endblock %}
 
 {% block script %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Reserve
-    const reserveBtn = document.getElementById('reserveBtn');
-    if (reserveBtn) {
-        reserveBtn.addEventListener('click', () => {
-            setLoading(reserveBtn, true);
-            safeFetch(`/api/event/${reserveBtn.dataset.eventId}/reserve`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            })
-            .then(data => {
-                showToast(data.message);
-                setTimeout(() => location.reload(), 800);
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-                setLoading(reserveBtn, false);
-            });
-        });
-    }
-
-    // Cancel
-    const cancelBtn = document.getElementById('cancelBtn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            if (!confirm('Cancel your reservation?')) return;
-            setLoading(cancelBtn, true);
-            safeFetch(`/api/event/${cancelBtn.dataset.eventId}/cancel`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            })
-            .then(data => {
-                showToast(data.message);
-                setTimeout(() => location.reload(), 800);
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-                setLoading(cancelBtn, false);
-            });
-        });
-    }
-
-    // Favorite toggle
-    const favBtn = document.getElementById('favBtn');
-    if (favBtn) {
-        favBtn.addEventListener('click', () => {
-            setLoading(favBtn, true);
-            safeFetch(`/api/event/${favBtn.dataset.eventId}/favorite`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            })
-            .then(data => {
-                favBtn.classList.toggle('active', data.favorited);
-                favBtn.textContent = data.favorited ? '♥ Favorited' : '♡ Favorite';
-                showToast(data.favorited ? 'Added to favorites' : 'Removed from favorites');
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-                setLoading(favBtn, false);
-            });
-        });
-    }
-
-    // Star rating
-    let selectedRating = 0;
-    const starRating = document.getElementById('starRating');
-    if (starRating) {
-        starRating.querySelectorAll('button').forEach(star => {
-            star.addEventListener('click', () => {
-                selectedRating = parseInt(star.dataset.value);
-                starRating.querySelectorAll('button').forEach((s, i) => {
-                    s.classList.toggle('active', i < selectedRating);
-                });
-            });
-        });
-    }
-
-    // Submit review
-    const submitReview = document.getElementById('submitReview');
-    if (submitReview) {
-        submitReview.addEventListener('click', () => {
-            if (selectedRating === 0) return showToast('Please select a rating.', 'error');
-            const comment = document.getElementById('reviewComment').value;
-            setLoading(submitReview, true);
-            safeFetch(`/api/event/${submitReview.dataset.eventId}/review`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ rating: selectedRating, comment }),
-            })
-            .then(data => {
-                showToast(data.message);
-                const noReviews = document.getElementById('noReviews');
-                if (noReviews) noReviews.remove();
-                const reviewsList = document.getElementById('reviewsList');
-                const review = data.review;
-                reviewsList.insertAdjacentHTML('afterbegin', `
-                    <div class="review-item">
-                        <div class="review-header">
-                            <strong>${escapeHtml(review.username)}</strong>
-                            <span class="review-stars">${review.rating}★</span>
-                            <span class="review-date">${escapeHtml(review.created_at)}</span>
-                        </div>
-                        ${review.comment ? `<p class="review-comment">${escapeHtml(review.comment)}</p>` : ''}
-                    </div>
-                `);
-                document.getElementById('reviewForm').remove();
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-                setLoading(submitReview, false);
-            });
-        });
-    }
-});
-</script>
+<script src="{% static 'reservations/event-detail.js' %}"></script>
 {% endblock %}

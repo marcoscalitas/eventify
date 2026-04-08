@@ -1,4 +1,5 @@
 {% extends "reservations/layout.html" %}
+{% load static %}
 
 {% block title %}My Reservations — Eventify{% endblock %}
 
@@ -28,26 +29,5 @@
 {% endblock %}
 
 {% block script %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.cancel-res-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!confirm('Cancel this reservation?')) return;
-            setLoading(btn, true);
-            safeFetch(`/api/event/${btn.dataset.eventId}/cancel`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            })
-            .then(data => {
-                showToast(data.message);
-                document.getElementById(`res-${btn.dataset.resId}`).remove();
-            })
-            .catch(err => {
-                showToast(err.message, 'error');
-                setLoading(btn, false);
-            });
-        });
-    });
-});
-</script>
+<script src="{% static 'reservations/my-reservations.js' %}"></script>
 {% endblock %}

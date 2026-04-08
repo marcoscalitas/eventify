@@ -50,26 +50,7 @@
     <script src="{% static 'reservations/app.js' %}"></script>
     <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
     {% if user.is_authenticated %}
-    <script>
-    // Poll for unread notifications every 30 seconds
-    function checkNotifications() {
-        safeFetch('/api/notifications')
-            .then(data => {
-                const badge = document.getElementById('notifBadge');
-                if (badge) {
-                    if (data.unread_count > 0) {
-                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                        badge.style.display = 'inline-flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-            })
-            .catch(() => {});
-    }
-    checkNotifications();
-    setInterval(checkNotifications, 30000);
-    </script>
+    <script src="{% static 'reservations/notifications.js' %}"></script>
     {% endif %}
     {% block script %}{% endblock %}
 </body>
