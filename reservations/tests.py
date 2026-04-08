@@ -175,6 +175,589 @@ class FormTests(TestCase):
         self.assertTrue(form.is_valid())
 
 
+class BruteFormValidationTests(TestCase):
+    """Brute-force validation tests for every form field boundary."""
+
+    # ── LoginForm ────────────────────────────────────────────
+
+    def test_login_empty_username(self):
+        from .forms import LoginForm
+        form = LoginForm(data={"username": "", "password": "pass"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("username", form.errors)
+
+    def test_login_empty_password(self):
+        from .forms import LoginForm
+        form = LoginForm(data={"username": "user", "password": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("password", form.errors)
+
+    def test_login_both_empty(self):
+        from .forms import LoginForm
+        form = LoginForm(data={"username": "", "password": ""})
+        self.assertFalse(form.is_valid())
+
+    def test_login_missing_fields(self):
+        from .forms import LoginForm
+        form = LoginForm(data={})
+        self.assertFalse(form.is_valid())
+
+    def test_login_username_too_long(self):
+        from .forms import LoginForm
+        form = LoginForm(data={"username": "a" * 151, "password": "pass"})
+        self.assertFalse(form.is_valid())
+
+    def test_login_valid(self):
+        from .forms import LoginForm
+        form = LoginForm(data={"username": "user", "password": "pass"})
+        self.assertTrue(form.is_valid())
+
+    # ── RegisterForm ─────────────────────────────────────────
+
+    def _register_data(self, **overrides):
+        data = {
+            "username": "newuser",
+            "email": "new@test.com",
+            "password": "password123",
+            "confirmation": "password123",
+            "role": "attendee",
+        }
+        data.update(overrides)
+        return data
+
+    def test_register_username_too_short(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(username="ab"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("username", form.errors)
+
+    def test_register_username_exactly_3(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(username="abc"))
+        self.assertTrue(form.is_valid())
+
+    def test_register_username_too_long(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(username="a" * 151))
+        self.assertFalse(form.is_valid())
+
+    def test_register_username_exactly_150(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(username="a" * 150))
+        self.assertTrue(form.is_valid())
+
+    def test_register_username_taken(self):
+        from .forms import RegisterForm
+        User.objects.create_user("taken", "t@t.com", "pass")
+        form = RegisterForm(data=self._register_data(username="taken"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("username", form.errors)
+
+    def test_register_empty_email(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(email=""))
+        self.assertFalse(form.is_valid())
+
+    def test_register_invalid_email(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(email="not-an-email"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+
+    def test_register_password_too_short(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(
+            password="12345", confirmation="12345"
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn("password", form.errors)
+
+    def test_register_password_exactly_6(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(
+            password="123456", confirmation="123456"
+        ))
+        self.assertTrue(form.is_valid())
+
+    def test_register_passwords_mismatch(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(confirmation="wrong"))
+        self.assertFalse(form.is_valid())
+
+    def test_register_invalid_role(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(role="admin"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("role", form.errors)
+
+    def test_register_empty_role(self):
+        from .forms import RegisterForm
+        form = RegisterForm(data=self._register_data(role=""))
+        self.assertFalse(form.is_valid())
+
+    # ── EventForm ────────────────────────────────────────────
+
+    def _event_data(self, **overrides):
+        if not hasattr(self, "_cat"):
+            self._cat = Category.objects.create(name="TestCat")
+        data = {
+            "title": "My Event",
+            "description": "A description",
+            "category": self._cat.id,
+            "location": "Lisbon",
+            "date": (date.today() + timedelta(days=7)).isoformat(),
+            "time": "20:00",
+            "capacity": 10,
+        }
+        data.update(overrides)
+        return data
+
+    def test_event_valid(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data())
+        self.assertTrue(form.is_valid())
+
+    def test_event_empty_title(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(title=""))
+        self.assertFalse(form.is_valid())
+        self.assertIn("title", form.errors)
+
+    def test_event_title_max_length(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(title="a" * 201))
+        self.assertFalse(form.is_valid())
+
+    def test_event_title_exactly_200(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(title="a" * 200))
+        self.assertTrue(form.is_valid())
+
+    def test_event_empty_description(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(description=""))
+        self.assertFalse(form.is_valid())
+
+    def test_event_empty_location(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(location=""))
+        self.assertFalse(form.is_valid())
+
+    def test_event_location_max_length(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(location="x" * 256))
+        self.assertFalse(form.is_valid())
+
+    def test_event_date_in_past(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(
+            date=(date.today() - timedelta(days=1)).isoformat()
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn("date", form.errors)
+
+    def test_event_date_today(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(date=date.today().isoformat()))
+        self.assertTrue(form.is_valid())
+
+    def test_event_date_far_past(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(date="2020-01-01"))
+        self.assertFalse(form.is_valid())
+
+    def test_event_empty_date(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(date=""))
+        self.assertFalse(form.is_valid())
+
+    def test_event_invalid_date_format(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(date="not-a-date"))
+        self.assertFalse(form.is_valid())
+
+    def test_event_empty_time(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(time=""))
+        self.assertFalse(form.is_valid())
+
+    def test_event_capacity_zero(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(capacity=0))
+        self.assertFalse(form.is_valid())
+        self.assertIn("capacity", form.errors)
+
+    def test_event_capacity_negative(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(capacity=-5))
+        self.assertFalse(form.is_valid())
+
+    def test_event_capacity_one(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(capacity=1))
+        self.assertTrue(form.is_valid())
+
+    def test_event_no_category_ok(self):
+        from .forms import EventForm
+        data = self._event_data()
+        data.pop("category")
+        form = EventForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    def test_event_invalid_image_url(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(image_url="not-a-url"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("image_url", form.errors)
+
+    def test_event_valid_image_url(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(
+            image_url="https://example.com/image.jpg"
+        ))
+        self.assertTrue(form.is_valid())
+
+    def test_event_empty_image_url_ok(self):
+        from .forms import EventForm
+        form = EventForm(data=self._event_data(image_url=""))
+        self.assertTrue(form.is_valid())
+
+    # ── ProfileForm ──────────────────────────────────────────
+
+    def test_profile_all_empty_is_valid(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "", "last_name": "", "email": "", "bio": "",
+        })
+        self.assertTrue(form.is_valid())
+
+    def test_profile_invalid_email(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "", "last_name": "", "email": "bad", "bio": "",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+
+    def test_profile_first_name_too_long(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "a" * 151, "last_name": "", "email": "", "bio": "",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("first_name", form.errors)
+
+    def test_profile_last_name_too_long(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "", "last_name": "a" * 151, "email": "", "bio": "",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("last_name", form.errors)
+
+    def test_profile_bio_max_length(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "", "last_name": "", "email": "",
+            "bio": "x" * 501,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("bio", form.errors)
+
+    def test_profile_bio_exactly_500(self):
+        from .forms import ProfileForm
+        form = ProfileForm(data={
+            "first_name": "", "last_name": "", "email": "",
+            "bio": "x" * 500,
+        })
+        self.assertTrue(form.is_valid())
+
+    # ── ReviewForm ───────────────────────────────────────────
+
+    def test_review_rating_zero(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 0, "comment": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("rating", form.errors)
+
+    def test_review_rating_negative(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": -1, "comment": ""})
+        self.assertFalse(form.is_valid())
+
+    def test_review_rating_six(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 6, "comment": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("rating", form.errors)
+
+    def test_review_rating_missing(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"comment": "hi"})
+        self.assertFalse(form.is_valid())
+
+    def test_review_rating_one(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 1, "comment": ""})
+        self.assertTrue(form.is_valid())
+
+    def test_review_rating_five(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 5, "comment": ""})
+        self.assertTrue(form.is_valid())
+
+    def test_review_comment_too_long(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 3, "comment": "x" * 1001})
+        self.assertFalse(form.is_valid())
+        self.assertIn("comment", form.errors)
+
+    def test_review_comment_exactly_1000(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 3, "comment": "x" * 1000})
+        self.assertTrue(form.is_valid())
+
+    def test_review_empty_comment_ok(self):
+        from .forms import ReviewForm
+        form = ReviewForm(data={"rating": 4})
+        self.assertTrue(form.is_valid())
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class BruteViewValidationTests(TestCase):
+    """Brute-force tests: bypass front-end, POST bad data directly to views."""
+
+    def setUp(self):
+        self.client = Client()
+        self.organizer = User.objects.create_user("org", "org@t.com", "pass1234")
+        self.attendee = User.objects.create_user("att", "att@t.com", "pass1234")
+        assign_role(self.organizer, "organizer")
+        assign_role(self.attendee, "attendee")
+        UserProfile.objects.create(user=self.organizer)
+        UserProfile.objects.create(user=self.attendee)
+        self.category = Category.objects.create(name="Music")
+
+    # ── Register view ────────────────────────────────────────
+
+    def test_register_post_short_username_rejected(self):
+        r = self.client.post(reverse("register"), {
+            "username": "ab", "email": "a@b.com",
+            "password": "pass1234", "confirmation": "pass1234", "role": "attendee",
+        })
+        self.assertEqual(r.status_code, 200)  # re-render with error
+        self.assertFalse(User.objects.filter(username="ab").exists())
+
+    def test_register_post_mismatch_passwords_rejected(self):
+        r = self.client.post(reverse("register"), {
+            "username": "newuser", "email": "a@b.com",
+            "password": "pass1234", "confirmation": "different", "role": "attendee",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_register_post_invalid_role_rejected(self):
+        r = self.client.post(reverse("register"), {
+            "username": "newuser", "email": "a@b.com",
+            "password": "pass1234", "confirmation": "pass1234", "role": "superadmin",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_register_post_bad_email_rejected(self):
+        r = self.client.post(reverse("register"), {
+            "username": "newuser", "email": "not-email",
+            "password": "pass1234", "confirmation": "pass1234", "role": "attendee",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_register_post_short_password_rejected(self):
+        r = self.client.post(reverse("register"), {
+            "username": "newuser", "email": "a@b.com",
+            "password": "12345", "confirmation": "12345", "role": "attendee",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    # ── Create event view ────────────────────────────────────
+
+    def test_create_event_past_date_rejected(self):
+        self.client.login(username="org", password="pass1234")
+        r = self.client.post(reverse("create_event"), {
+            "title": "Past", "description": "desc", "location": "Here",
+            "date": (date.today() - timedelta(days=30)).isoformat(),
+            "time": "20:00", "capacity": 10,
+        })
+        self.assertEqual(r.status_code, 200)  # re-render form
+        self.assertFalse(Event.objects.filter(title="Past").exists())
+
+    def test_create_event_zero_capacity_rejected(self):
+        self.client.login(username="org", password="pass1234")
+        r = self.client.post(reverse("create_event"), {
+            "title": "Zero", "description": "desc", "location": "Here",
+            "date": (date.today() + timedelta(days=7)).isoformat(),
+            "time": "20:00", "capacity": 0,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Event.objects.filter(title="Zero").exists())
+
+    def test_create_event_negative_capacity_rejected(self):
+        self.client.login(username="org", password="pass1234")
+        r = self.client.post(reverse("create_event"), {
+            "title": "Neg", "description": "desc", "location": "Here",
+            "date": (date.today() + timedelta(days=7)).isoformat(),
+            "time": "20:00", "capacity": -1,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Event.objects.filter(title="Neg").exists())
+
+    def test_create_event_empty_title_rejected(self):
+        self.client.login(username="org", password="pass1234")
+        r = self.client.post(reverse("create_event"), {
+            "title": "", "description": "desc", "location": "Here",
+            "date": (date.today() + timedelta(days=7)).isoformat(),
+            "time": "20:00", "capacity": 10,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Event.objects.count(), 0)
+
+    def test_create_event_bad_image_url_rejected(self):
+        self.client.login(username="org", password="pass1234")
+        r = self.client.post(reverse("create_event"), {
+            "title": "Ev", "description": "desc", "location": "Here",
+            "date": (date.today() + timedelta(days=7)).isoformat(),
+            "time": "20:00", "capacity": 10, "image_url": "not-a-url",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Event.objects.filter(title="Ev").exists())
+
+    # ── Profile view ─────────────────────────────────────────
+
+    def test_profile_post_invalid_email_rejected(self):
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(reverse("profile"), {
+            "first_name": "A", "last_name": "B",
+            "email": "bad-email", "bio": "hi",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.attendee.refresh_from_db()
+        self.assertNotEqual(self.attendee.email, "bad-email")
+
+    def test_profile_post_bio_too_long_rejected(self):
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(reverse("profile"), {
+            "first_name": "A", "last_name": "B",
+            "email": "ok@ok.com", "bio": "x" * 501,
+        })
+        self.assertEqual(r.status_code, 200)
+        profile = UserProfile.objects.get(user=self.attendee)
+        self.assertNotEqual(len(profile.bio), 501)
+
+    def test_profile_post_valid_accepted(self):
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(reverse("profile"), {
+            "first_name": "John", "last_name": "Doe",
+            "email": "john@doe.com", "bio": "My bio",
+        })
+        self.assertEqual(r.status_code, 302)  # redirect
+        self.attendee.refresh_from_db()
+        self.assertEqual(self.attendee.first_name, "John")
+
+    # ── Review API ───────────────────────────────────────────
+
+    def _make_event_and_reserve(self):
+        event = Event.objects.create(
+            title="Ev", description="D", category=self.category,
+            organizer=self.organizer, location="L",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0), capacity=10,
+        )
+        event.reserve(self.attendee)
+        return event
+
+    def test_review_api_rating_zero_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": 0, "comment": ""}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Review.objects.filter(event=event).exists())
+
+    def test_review_api_rating_six_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": 6, "comment": ""}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_review_api_rating_negative_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": -1, "comment": ""}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_review_api_comment_too_long_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": 3, "comment": "x" * 1001}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_review_api_missing_rating_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"comment": "no rating"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_review_api_invalid_json_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            "not json at all",
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+    def test_review_api_valid_accepted(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": 4, "comment": "Nice"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(Review.objects.filter(event=event, user=self.attendee).exists())
+
+    def test_review_api_huge_rating_rejected(self):
+        event = self._make_event_and_reserve()
+        self.client.login(username="att", password="pass1234")
+        r = self.client.post(
+            reverse("api_review", args=[event.id]),
+            json.dumps({"rating": 999999, "comment": ""}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+
+
 @override_settings(RATELIMIT_ENABLE=False)
 class APITests(TestCase):
     def setUp(self):

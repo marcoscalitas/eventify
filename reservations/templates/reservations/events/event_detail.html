@@ -82,7 +82,7 @@
                         <button type="button" data-value="5" aria-label="5 stars">★</button>
                     </div>
                     <label for="reviewComment" class="sr-only">Your review</label>
-                    <textarea id="reviewComment" placeholder="Share your experience..." rows="3"></textarea>
+                    <textarea id="reviewComment" placeholder="Share your experience..." rows="3" maxlength="1000"></textarea>
                     <button class="btn btn-primary btn-sm" id="submitReview" data-event-id="{{ event.id }}">Submit Review</button>
                 </div>
             {% endif %}

@@ -441,6 +441,9 @@ a:hover { text-decoration: underline; }
 }
 
 /* Form validation */
+.just-validate-error-field { border-color: var(--danger) !important; }
+.just-validate-error-field:focus { box-shadow: 0 0 0 3px rgba(220,38,38,0.1) !important; }
+.just-validate-success-field { border-color: var(--success) !important; }
 .field-error {
     display: block;
     color: var(--danger);
