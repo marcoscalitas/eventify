@@ -4,25 +4,25 @@
 {% block title %}Login — Eventify{% endblock %}
 
 {% block body %}
-<div class="auth-container">
+<div class="form-card">
     <h2>Login</h2>
     {% if message %}
-        <div class="alert alert-error">{{ message }}</div>
+        <div class="alert alert--error">{{ message }}</div>
     {% endif %}
     <form id="loginForm" method="post" action="{% url 'login' %}">
         {% csrf_token %}
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" autofocus>
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password">
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Login</button>
+        <button type="submit" class="btn btn--primary btn--block">Login</button>
     </form>
-    <p class="auth-forgot"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
-    <p class="auth-switch">Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
+    <p class="form-card__forgot"><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
+    <p class="form-card__switch">Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
 </div>
 {% endblock %}
 

@@ -3,12 +3,12 @@
 {% block title %}Attendees — {{ event.title }}{% endblock %}
 
 {% block body %}
-<div class="dashboard-header">
+<div class="page-header">
     <div>
         <h2>Attendees</h2>
-        <p class="subtitle">{{ event.title }} — {{ reservations|length }} confirmed</p>
+        <p class="page-header__subtitle">{{ event.title }} — {{ reservations|length }} confirmed</p>
     </div>
-    <a href="{% url 'export_csv' event.id %}" class="btn btn-secondary">📥 Export CSV</a>
+    <a href="{% url 'export_csv' event.id %}" class="btn btn--secondary">📥 Export CSV</a>
 </div>
 
 {% if reservations %}
@@ -36,5 +36,5 @@
     <p class="empty-message">No attendees yet.</p>
 {% endif %}
 
-<a href="{% url 'my_events' %}" class="btn btn-secondary" style="margin-top: 1rem;">← Back to My Events</a>
+<a href="{% url 'my_events' %}" class="btn btn--secondary" style="margin-top: 1rem;">← Back to My Events</a>
 {% endblock %}

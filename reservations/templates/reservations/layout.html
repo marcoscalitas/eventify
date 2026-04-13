@@ -6,34 +6,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Eventify{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}?v=7">
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to content</a>
 
     <nav class="navbar" role="navigation" aria-label="Main navigation">
-        <div class="nav-container">
-            <a href="{% url 'index' %}" class="nav-brand">🎫 Eventify</a>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
-            <ul class="nav-links" id="navLinks">
-                <li><a href="{% url 'index' %}">Events</a></li>
+        <div class="navbar__container">
+            <a href="{% url 'index' %}" class="navbar__brand">🎫 Eventify</a>
+            <button class="navbar__toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+            <ul class="navbar__links" id="navLinks">
+                <li><a href="{% url 'index' %}" class="navbar__link">Events</a></li>
                 {% if user.is_authenticated %}
                     {% if user|has_role:'organizer' %}
-                        <li><a href="{% url 'create_event' %}">Create Event</a></li>
-                        <li><a href="{% url 'my_events' %}">My Events</a></li>
+                        <li><a href="{% url 'create_event' %}" class="navbar__link">Create Event</a></li>
+                        <li><a href="{% url 'my_events' %}" class="navbar__link">My Events</a></li>
                     {% endif %}
-                    <li><a href="{% url 'my_reservations' %}">My Reservations</a></li>
-                    <li><a href="{% url 'my_favorites' %}">Favorites</a></li>
+                    <li><a href="{% url 'my_reservations' %}" class="navbar__link">My Reservations</a></li>
+                    <li><a href="{% url 'my_favorites' %}" class="navbar__link">Favorites</a></li>
                     <li>
-                        <a href="{% url 'notifications' %}" class="nav-notification" id="navNotification">
-                            🔔<span class="notification-badge" id="notifBadge" style="display:none;">0</span>
+                        <a href="{% url 'notifications' %}" class="navbar__link navbar__notification" id="navNotification">
+                            🔔<span class="navbar__badge" id="notifBadge" style="display:none;">0</span>
                         </a>
                     </li>
-                    <li><a href="{% url 'profile' %}">Profile</a></li>
-                    <li><a href="{% url 'logout' %}" class="btn-nav">Logout</a></li>
+                    <li><a href="{% url 'profile' %}" class="navbar__link">Profile</a></li>
+                    <li><a href="{% url 'logout' %}" class="navbar__link">Logout</a></li>
                 {% else %}
-                    <li><a href="{% url 'login' %}" class="btn-nav">Login</a></li>
-                    <li><a href="{% url 'register' %}" class="btn-nav btn-register">Register</a></li>
+                    <li><a href="{% url 'login' %}" class="navbar__link">Login</a></li>
+                    <li><a href="{% url 'register' %}" class="navbar__link navbar__link--register">Register</a></li>
                 {% endif %}
             </ul>
         </div>

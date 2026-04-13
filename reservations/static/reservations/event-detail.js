@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         favBtn.addEventListener('click', () => {
             postAction(favBtn, `/api/event/${favBtn.dataset.eventId}/favorite`)
             .then(data => {
-                favBtn.classList.toggle('active', data.favorited);
+                favBtn.classList.toggle('btn-fav--active', data.favorited);
                 favBtn.textContent = data.favorited ? '♥ Favorited' : '♡ Favorite';
                 showToast(data.favorited ? 'Added to favorites' : 'Removed from favorites');
             });
@@ -73,13 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const reviewsList = document.getElementById('reviewsList');
                 const review = data.review;
                 reviewsList.insertAdjacentHTML('afterbegin', `
-                    <div class="review-item">
-                        <div class="review-header">
+                    <div class="review">
+                        <div class="review__header">
                             <strong>${escapeHtml(review.username)}</strong>
-                            <span class="review-stars">${review.rating}★</span>
-                            <span class="review-date">${escapeHtml(review.created_at)}</span>
+                            <span class="review__stars">${review.rating}★</span>
+                            <span class="review__date">${escapeHtml(review.created_at)}</span>
                         </div>
-                        ${review.comment ? `<p class="review-comment">${escapeHtml(review.comment)}</p>` : ''}
+                        ${review.comment ? `<p class="review__comment">${escapeHtml(review.comment)}</p>` : ''}
                     </div>
                 `);
                 document.getElementById('reviewForm').remove();

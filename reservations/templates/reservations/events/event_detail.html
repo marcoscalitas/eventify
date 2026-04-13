@@ -6,28 +6,28 @@
 {% block body %}
 <div class="event-detail">
     {% if event.image %}
-        <div class="event-detail-image" style="background-image: url('{{ event.image.url }}')"></div>
+        <div class="event-detail__image" style="background-image: url('{{ event.image.url }}')"></div>
     {% endif %}
 
-    <div class="event-detail-content">
-        <div class="event-detail-header">
+    <div class="event-detail__content">
+        <div class="event-detail__header">
             {% if event.category %}
-                <span class="event-category">{{ event.category.name }}</span>
+                <span class="event-card__category">{{ event.category.name }}</span>
             {% endif %}
             {% if average_rating %}
-                <span class="event-rating-lg">★ {{ average_rating }}</span>
+                <span class="event-detail__rating">★ {{ average_rating }}</span>
             {% endif %}
             <h1>{{ event.title }}</h1>
-            <p class="event-meta">
+            <p class="event-detail__meta">
                 Organized by <a href="{% url 'profile_public' event.organizer.username %}">{{ event.organizer.username }}</a>
             </p>
         </div>
 
-        <div class="event-detail-info">
-            <div class="info-row"><span>📍</span><span><strong>Location:</strong> {{ event.location }}</span></div>
-            <div class="info-row"><span>📅</span><span><strong>Date:</strong> {{ event.date }}</span></div>
-            <div class="info-row"><span>🕐</span><span><strong>Time:</strong> {{ event.time }}</span></div>
-            <div class="info-row">
+        <div class="event-detail__info">
+            <div class="event-detail__row"><span>📍</span><span><strong>Location:</strong> {{ event.location }}</span></div>
+            <div class="event-detail__row"><span>📅</span><span><strong>Date:</strong> {{ event.date }}</span></div>
+            <div class="event-detail__row"><span>🕐</span><span><strong>Time:</strong> {{ event.time }}</span></div>
+            <div class="event-detail__row">
                 <span>👥</span>
                 <span><strong>Capacity:</strong> {{ event.capacity }}
                     (<span id="spotsLeft">{{ spots_left }}</span> spots left)
@@ -35,30 +35,30 @@
             </div>
         </div>
 
-        <div class="event-detail-description">
+        <div class="event-detail__description">
             <h3>About this event</h3>
             <p>{{ event.description|linebreaksbr }}</p>
         </div>
 
-        <div class="event-actions" id="eventActions">
+        <div class="event-detail__actions" id="eventActions">
             {% if user.is_authenticated %}
                 {% if user == event.organizer %}
-                    <a href="{% url 'edit_event' event.id %}" class="btn btn-secondary">Edit Event</a>
+                    <a href="{% url 'edit_event' event.id %}" class="btn btn--secondary">Edit Event</a>
                 {% else %}
-                    <div class="action-buttons">
+                    <div class="event-detail__buttons">
                         {% if user_reservation %}
-                            <button class="btn btn-danger" id="cancelBtn" data-event-id="{{ event.id }}">
+                            <button class="btn btn--danger" id="cancelBtn" data-event-id="{{ event.id }}">
                                 Cancel Reservation
                             </button>
                         {% elif spots_left > 0 %}
-                            <button class="btn btn-primary" id="reserveBtn" data-event-id="{{ event.id }}">
+                            <button class="btn btn--primary" id="reserveBtn" data-event-id="{{ event.id }}">
                                 Reserve My Spot
                             </button>
                         {% else %}
-                            <span class="badge badge-full">Fully Booked</span>
+                            <span class="badge badge--full">Fully Booked</span>
                         {% endif %}
 
-                        <button class="btn btn-fav {% if user_favorited %}active{% endif %}" id="favBtn"
+                        <button class="btn-fav {% if user_favorited %}btn-fav--active{% endif %}" id="favBtn"
                             data-event-id="{{ event.id }}">
                             {{ user_favorited|yesno:"♥ Favorited,♡ Favorite" }}
                         </button>
@@ -70,7 +70,7 @@
         </div>
 
         <!-- Reviews section -->
-        <div class="reviews-section">
+        <div class="reviews">
             <h3>Reviews</h3>
 
             {% if user.is_authenticated and user_reservation and not user_reviewed and user != event.organizer %}
@@ -84,20 +84,20 @@
                     </div>
                     <label for="reviewComment" class="sr-only">Your review</label>
                     <textarea id="reviewComment" placeholder="Share your experience..." rows="3" maxlength="1000"></textarea>
-                    <button class="btn btn-primary btn-sm" id="submitReview" data-event-id="{{ event.id }}">Submit Review</button>
+                    <button class="btn btn--primary btn--sm" id="submitReview" data-event-id="{{ event.id }}">Submit Review</button>
                 </div>
             {% endif %}
 
             <div id="reviewsList">
                 {% for review in reviews %}
-                    <div class="review-item">
-                        <div class="review-header">
+                    <div class="review">
+                        <div class="review__header">
                             <strong>{{ review.user.username }}</strong>
-                            <span class="review-stars">{{ review.rating }}★</span>
-                            <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                            <span class="review__stars">{{ review.rating }}★</span>
+                            <span class="review__date">{{ review.created_at|date:"M d, Y" }}</span>
                         </div>
                         {% if review.comment %}
-                            <p class="review-comment">{{ review.comment }}</p>
+                            <p class="review__comment">{{ review.comment }}</p>
                         {% endif %}
                     </div>
                 {% empty %}

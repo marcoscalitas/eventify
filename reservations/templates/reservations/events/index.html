@@ -5,13 +5,13 @@
 
 {% block body %}
 <section class="hero">
-    <h1>Discover & Reserve Events</h1>
-    <p>Find upcoming events, reserve your spot, and manage your bookings.</p>
+    <h1 class="hero__title">Discover & Reserve Events</h1>
+    <p class="hero__text">Find upcoming events, reserve your spot, and manage your bookings.</p>
 </section>
 
 <section class="filters">
-    <input type="text" id="searchInput" placeholder="Search events..." class="search-input">
-    <select id="categoryFilter" class="category-select">
+    <input type="text" id="searchInput" placeholder="Search events..." class="filters__input">
+    <select id="categoryFilter" class="filters__select">
         <option value="">All Categories</option>
         {% for category in categories %}
             <option value="{{ category.name }}">{{ category.name }}</option>
@@ -20,7 +20,7 @@
 </section>
 
 <section class="events-grid" id="eventsGrid">
-    <div class="loading">Loading events...</div>
+    <div class="events-grid__loading">Loading events...</div>
 </section>
 
 <div class="pagination" id="pagination"></div>

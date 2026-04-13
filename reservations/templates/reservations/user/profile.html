@@ -4,38 +4,38 @@
 {% block title %}My Profile — Eventify{% endblock %}
 
 {% block body %}
-<div class="form-container">
+<div class="form-card">
     <h2>My Profile</h2>
     <form id="profileForm" method="post" action="{% url 'profile' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-row">
-            <div class="form-group">
+        <div class="form-card__row">
+            <div class="form-card__group">
                 <label for="first_name">First Name</label>
                 <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}">
             </div>
-            <div class="form-group">
+            <div class="form-card__group">
                 <label for="last_name">Last Name</label>
                 <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}">
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" value="{{ user.email }}">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="avatar">Avatar</label>
             {% if user_profile.avatar %}
                 <div class="avatar-preview">
-                    <img src="{{ user_profile.avatar.url }}" alt="Current avatar" class="profile-avatar-small">
+                    <img src="{{ user_profile.avatar.url }}" alt="Current avatar" class="profile__avatar--small">
                 </div>
             {% endif %}
             <input type="file" id="avatar" name="avatar" accept="image/*">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="bio">Bio</label>
             <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself...">{{ user_profile.bio }}</textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="submit" class="btn btn--primary">Save Changes</button>
     </form>
 </div>
 {% endblock %}

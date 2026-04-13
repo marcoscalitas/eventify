@@ -57,21 +57,21 @@ function showToast(message, type = 'success') {
     if (!container) {
         container = document.createElement('div');
         container.id = 'toastContainer';
-        container.className = 'toast-container';
+        container.className = 'toasts';
         container.setAttribute('aria-live', 'polite');
         document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    toast.className = `toast toast--${type}`;
     toast.setAttribute('role', 'status');
     toast.textContent = message;
     container.appendChild(toast);
 
-    requestAnimationFrame(() => toast.classList.add('show'));
+    requestAnimationFrame(() => toast.classList.add('toast--show'));
 
     setTimeout(() => {
-        toast.classList.remove('show');
+        toast.classList.remove('toast--show');
         toast.addEventListener('transitionend', () => toast.remove());
     }, TOAST_DURATION);
 }

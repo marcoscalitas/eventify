@@ -9,17 +9,17 @@
     <div class="events-grid">
         {% for fav in favorites %}
             <a href="{% url 'event_detail' fav.event.id %}" class="event-card">
-                <div class="event-card-image" style="background-image: url('{% if fav.event.image %}{{ fav.event.image.url }}{% endif %}')">
+                <div class="event-card__image" style="background-image: url('{% if fav.event.image %}{{ fav.event.image.url }}{% endif %}')">
                     {% if fav.event.category %}
-                        <span class="event-category">{{ fav.event.category.name }}</span>
+                        <span class="event-card__category">{{ fav.event.category.name }}</span>
                     {% endif %}
                 </div>
-                <div class="event-card-body">
+                <div class="event-card__body">
                     <h3>{{ fav.event.title }}</h3>
-                    <p class="event-meta">📍 {{ fav.event.location }}</p>
-                    <p class="event-meta">📅 {{ fav.event.date }} at {{ fav.event.time }}</p>
-                    <div class="event-footer">
-                        <span class="spots {% if fav.event.spots_left == 0 %}spots-full{% endif %}">
+                    <p class="event-card__meta">📍 {{ fav.event.location }}</p>
+                    <p class="event-card__meta">📅 {{ fav.event.date }} at {{ fav.event.time }}</p>
+                    <div class="event-card__footer">
+                        <span class="event-card__spots {% if fav.event.spots_left == 0 %}event-card__spots--full{% endif %}">
                             {% if fav.event.spots_left > 0 %}
                                 {{ fav.event.spots_left }} spots left
                             {% else %}

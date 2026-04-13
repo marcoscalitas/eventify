@@ -4,19 +4,19 @@
 {% block title %}{% if editing %}Edit Event{% else %}Create Event{% endif %} — Eventify{% endblock %}
 
 {% block body %}
-<div class="form-container">
+<div class="form-card">
     <h2>{% if editing %}Edit Event{% else %}Create New Event{% endif %}</h2>
     <form id="eventForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="title">Event Title</label>
             <input type="text" id="title" name="title" value="{% if editing %}{{ event.title }}{% endif %}">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="description">Description</label>
             <textarea id="description" name="description" rows="5">{% if editing %}{{ event.description }}{% endif %}</textarea>
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="category">Category (optional)</label>
             <select id="category" name="category">
                 <option value="">No category</option>
@@ -28,38 +28,38 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="form-row">
-            <div class="form-group">
+        <div class="form-card__row">
+            <div class="form-card__group">
                 <label for="date">Date</label>
                 <input type="date" id="date" name="date"
                     value="{% if editing %}{{ event.date|date:'Y-m-d' }}{% endif %}">
             </div>
-            <div class="form-group">
+            <div class="form-card__group">
                 <label for="time">Time</label>
                 <input type="time" id="time" name="time"
                     value="{% if editing %}{{ event.time|time:'H:i' }}{% endif %}">
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="location">Location</label>
             <input type="text" id="location" name="location"
                 value="{% if editing %}{{ event.location }}{% endif %}">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="capacity">Capacity</label>
             <input type="number" id="capacity" name="capacity" min="1"
                 value="{% if editing %}{{ event.capacity }}{% endif %}">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="image">Event Image (optional)</label>
             {% if editing and event.image %}
                 <div class="current-image-preview">
-                    <img src="{{ event.image.url }}" alt="Current image" class="profile-avatar-small">
+                    <img src="{{ event.image.url }}" alt="Current image" class="profile__avatar--small">
                 </div>
             {% endif %}
             <input type="file" id="image" name="image" accept="image/*">
         </div>
-        <button type="submit" class="btn btn-primary">{% if editing %}Save Changes{% else %}Create Event{% endif %}</button>
+        <button type="submit" class="btn btn--primary">{% if editing %}Save Changes{% else %}Create Event{% endif %}</button>
     </form>
 </div>
 {% endblock %}

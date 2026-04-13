@@ -4,17 +4,17 @@
 
 {% block body %}
 <div class="notifications-page">
-    <div class="dashboard-header">
+    <div class="page-header">
         <div>
             <h2>Notifications</h2>
-            <p class="subtitle">Stay up to date with your events and reservations.</p>
+            <p class="page-header__subtitle">Stay up to date with your events and reservations.</p>
         </div>
     </div>
 
     <div class="notifications-list">
         {% for notif in notifications %}
-            <div class="notification-item {% if not notif.is_read %}unread{% endif %}">
-                <div class="notification-icon">
+            <div class="notification {% if not notif.is_read %}notification--unread{% endif %}">
+                <div class="notification__icon">
                     {% if notif.notification_type == "reservation_confirmed" %}🎟️
                     {% elif notif.notification_type == "reservation_cancelled" %}❌
                     {% elif notif.notification_type == "new_review" %}⭐
@@ -22,14 +22,14 @@
                     {% elif notif.notification_type == "event_reminder" %}⏰
                     {% else %}🔔{% endif %}
                 </div>
-                <div class="notification-content">
-                    <div class="notification-header">
+                <div class="notification__content">
+                    <div class="notification__header">
                         <strong>{{ notif.title }}</strong>
-                        <span class="notification-time">{{ notif.created_at|timesince }} ago</span>
+                        <span class="notification__time">{{ notif.created_at|timesince }} ago</span>
                     </div>
-                    <p class="notification-message">{{ notif.message }}</p>
+                    <p class="notification__message">{{ notif.message }}</p>
                     {% if notif.link %}
-                        <a href="{{ notif.link }}" class="notification-link">View details →</a>
+                        <a href="{{ notif.link }}" class="notification__link">View details →</a>
                     {% endif %}
                 </div>
             </div>

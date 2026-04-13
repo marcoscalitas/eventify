@@ -4,39 +4,39 @@
 {% block title %}Register — Eventify{% endblock %}
 
 {% block body %}
-<div class="auth-container">
+<div class="form-card">
     <h2>Create your account</h2>
     {% if message %}
-        <div class="alert alert-error">{{ message }}</div>
+        <div class="alert alert--error">{{ message }}</div>
     {% endif %}
     <form id="registerForm" method="post" action="{% url 'register' %}">
         {% csrf_token %}
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" autofocus>
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="email">Email</label>
             <input type="email" id="email" name="email">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="confirmation">Confirm Password</label>
             <input type="password" id="confirmation" name="confirmation">
         </div>
-        <div class="form-group">
+        <div class="form-card__group">
             <label for="role">I want to</label>
             <select id="role" name="role">
                 <option value="attendee">Attend events</option>
                 <option value="organizer">Organize events</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Register</button>
+        <button type="submit" class="btn btn--primary btn--block">Register</button>
     </form>
-    <p class="auth-switch">Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>
+    <p class="form-card__switch">Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>
 </div>
 {% endblock %}
 

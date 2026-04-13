@@ -23,26 +23,26 @@ function loadEvents() {
         .then(data => {
             const grid = document.getElementById('eventsGrid');
             if (data.events.length === 0) {
-                grid.innerHTML = '<p class="no-results">No events found.</p>';
+                grid.innerHTML = '<p class="events-grid__empty">No events found.</p>';
                 document.getElementById('pagination').innerHTML = '';
                 return;
             }
             grid.innerHTML = data.events.map(event => `
                 <a href="/event/${event.id}" class="event-card">
-                    <div class="event-card-image" style="background-image: url('${escapeHtml(event.image || '')}')">
-                        ${event.category ? `<span class="event-category">${escapeHtml(event.category)}</span>` : ''}
-                        ${event.average_rating ? `<span class="event-rating">★ ${event.average_rating}</span>` : ''}
+                    <div class="event-card__image" style="background-image: url('${escapeHtml(event.image || '')}')">
+                        ${event.category ? `<span class="event-card__category">${escapeHtml(event.category)}</span>` : ''}
+                        ${event.average_rating ? `<span class="event-card__rating">★ ${event.average_rating}</span>` : ''}
                     </div>
-                    <div class="event-card-body">
+                    <div class="event-card__body">
                         <h3>${escapeHtml(event.title)}</h3>
-                        <p class="event-meta">📍 ${escapeHtml(event.location)}</p>
-                        <p class="event-meta">📅 ${escapeHtml(event.date)} at ${escapeHtml(event.time)}</p>
-                        <p class="event-description">${escapeHtml(event.description)}</p>
-                        <div class="event-footer">
-                            <span class="spots ${event.spots_left === 0 ? 'spots-full' : ''}">
+                        <p class="event-card__meta">📍 ${escapeHtml(event.location)}</p>
+                        <p class="event-card__meta">📅 ${escapeHtml(event.date)} at ${escapeHtml(event.time)}</p>
+                        <p class="event-card__description">${escapeHtml(event.description)}</p>
+                        <div class="event-card__footer">
+                            <span class="event-card__spots ${event.spots_left === 0 ? 'event-card__spots--full' : ''}">
                                 ${event.spots_left > 0 ? event.spots_left + ' spots left' : 'Fully booked'}
                             </span>
-                            <span class="organizer">by ${escapeHtml(event.organizer)}</span>
+                            <span class="event-card__organizer">by ${escapeHtml(event.organizer)}</span>
                         </div>
                     </div>
                 </a>
@@ -51,7 +51,7 @@ function loadEvents() {
             renderPagination(data.page, data.total_pages);
         })
         .catch(() => {
-            document.getElementById('eventsGrid').innerHTML = '<p class="no-results">Failed to load events.</p>';
+            document.getElementById('eventsGrid').innerHTML = '<p class="events-grid__empty">Failed to load events.</p>';
         });
 }
 
@@ -60,7 +60,7 @@ function renderPagination(page, totalPages) {
     if (totalPages <= 1) { el.innerHTML = ''; return; }
     let html = '';
     if (page > 1) html += `<button onclick="goToPage(${page - 1})">← Prev</button>`;
-    html += `<span class="page-info">Page ${page} of ${totalPages}</span>`;
+    html += `<span class="pagination__info">Page ${page} of ${totalPages}</span>`;
     if (page < totalPages) html += `<button onclick="goToPage(${page + 1})">Next →</button>`;
     el.innerHTML = html;
 }
