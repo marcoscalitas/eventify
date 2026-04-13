@@ -2,16 +2,36 @@ from django.contrib import admin
 from .models import UserProfile, Category, Event, Reservation, Review, Favorite, Notification
 
 
+class SoftDeleteAdmin(admin.ModelAdmin):
+    """Base admin that shows soft-deleted records and provides restore."""
+
+    def get_queryset(self, request):
+        return self.model.all_objects.all()
+
+    def is_deleted(self, obj):
+        return obj.deleted_at is not None
+    is_deleted.boolean = True
+    is_deleted.short_description = "Deleted?"
+
+    @admin.action(description="Restore selected items")
+    def restore_selected(self, request, queryset):
+        queryset.update(deleted_at=None)
+
+
 @admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "bio")
+class UserProfileAdmin(SoftDeleteAdmin):
+    list_display = ("user", "bio", "is_deleted")
+    list_filter = ("deleted_at",)
     search_fields = ("user__username",)
+    actions = ["restore_selected"]
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+class CategoryAdmin(SoftDeleteAdmin):
+    list_display = ("name", "is_deleted")
+    list_filter = ("deleted_at",)
     search_fields = ("name",)
+    actions = ["restore_selected"]
 
 
 class ReservationInline(admin.TabularInline):
@@ -22,14 +42,14 @@ class ReservationInline(admin.TabularInline):
 
 
 @admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ("title", "organizer", "category", "date", "time", "capacity", "is_active")
-    list_filter = ("is_active", "category", "date")
+class EventAdmin(SoftDeleteAdmin):
+    list_display = ("title", "organizer", "category", "date", "time", "capacity", "is_active", "is_deleted")
+    list_filter = ("is_active", "category", "date", "deleted_at")
     search_fields = ("title", "description", "organizer__username")
     readonly_fields = ("created_at", "updated_at")
     autocomplete_fields = ("organizer", "category")
     inlines = [ReservationInline]
-    actions = ["deactivate_events", "activate_events"]
+    actions = ["deactivate_events", "activate_events", "restore_selected"]
 
     @admin.action(description="Deactivate selected events")
     def deactivate_events(self, request, queryset):
@@ -41,12 +61,12 @@ class EventAdmin(admin.ModelAdmin):
 
 
 @admin.register(Reservation)
-class ReservationAdmin(admin.ModelAdmin):
-    list_display = ("user", "event", "status", "created_at")
-    list_filter = ("status",)
+class ReservationAdmin(SoftDeleteAdmin):
+    list_display = ("user", "event", "status", "created_at", "is_deleted")
+    list_filter = ("status", "deleted_at")
     search_fields = ("user__username", "event__title")
     readonly_fields = ("created_at",)
-    actions = ["cancel_reservations"]
+    actions = ["cancel_reservations", "restore_selected"]
 
     @admin.action(description="Cancel selected reservations")
     def cancel_reservations(self, request, queryset):
@@ -54,27 +74,30 @@ class ReservationAdmin(admin.ModelAdmin):
 
 
 @admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
-    list_display = ("user", "event", "rating", "created_at")
-    list_filter = ("rating",)
+class ReviewAdmin(SoftDeleteAdmin):
+    list_display = ("user", "event", "rating", "created_at", "is_deleted")
+    list_filter = ("rating", "deleted_at")
     search_fields = ("user__username", "event__title")
     readonly_fields = ("created_at",)
+    actions = ["restore_selected"]
 
 
 @admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ("user", "event", "created_at")
+class FavoriteAdmin(SoftDeleteAdmin):
+    list_display = ("user", "event", "created_at", "is_deleted")
+    list_filter = ("deleted_at",)
     search_fields = ("user__username", "event__title")
     readonly_fields = ("created_at",)
+    actions = ["restore_selected"]
 
 
 @admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ("recipient", "notification_type", "title", "is_read", "created_at")
-    list_filter = ("notification_type", "is_read")
+class NotificationAdmin(SoftDeleteAdmin):
+    list_display = ("recipient", "notification_type", "title", "is_read", "created_at", "is_deleted")
+    list_filter = ("notification_type", "is_read", "deleted_at")
     search_fields = ("title", "message", "recipient__username")
     readonly_fields = ("created_at",)
-    actions = ["mark_as_read"]
+    actions = ["mark_as_read", "restore_selected"]
 
     @admin.action(description="Mark selected as read")
     def mark_as_read(self, request, queryset):

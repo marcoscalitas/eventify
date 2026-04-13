@@ -1,4 +1,4 @@
-new JustValidate('#profileForm', { errorLabelCssClass: ['field-error'] })
+new JustValidate('#profileForm', { errorLabelCssClass: ['field-error'], validateBeforeSubmitting: true })
     .addField('#email', [
         { rule: 'email', errorMessage: 'Enter a valid email.' },
     ])

@@ -1,4 +1,4 @@
-new JustValidate('#resetForm', { errorLabelCssClass: ['field-error'] })
+new JustValidate('#resetForm', { errorLabelCssClass: ['field-error'], validateBeforeSubmitting: true })
     .addField('#id_email', [
         { rule: 'required', errorMessage: 'Email is required.' },
         { rule: 'email', errorMessage: 'Enter a valid email.' },

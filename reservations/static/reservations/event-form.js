@@ -1,4 +1,4 @@
-new JustValidate('#eventForm', { errorLabelCssClass: ['field-error'] })
+new JustValidate('#eventForm', { errorLabelCssClass: ['field-error'], validateBeforeSubmitting: true })
     .addField('#title', [
         { rule: 'required', errorMessage: 'Title is required.' },
     ])

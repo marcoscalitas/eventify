@@ -11,8 +11,8 @@ from .models import Category, Event, Favorite, Notification, Reservation, Review
 
 class EventModelTests(TestCase):
     def setUp(self):
-        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
-        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         self.category = Category.objects.create(name="Music")
         self.event = Event.objects.create(
             title="Concert",
@@ -51,10 +51,10 @@ class EventModelTests(TestCase):
         self.assertEqual(error, "Already reserved.")
 
     def test_reserve_full(self):
-        user2 = User.objects.create_user("user2", "u2@test.com", "pass1234")
+        user2 = User.objects.create_user("user2", "u2@test.com", "Test@1234")
         self.event.reserve(self.attendee)
         self.event.reserve(user2)
-        user3 = User.objects.create_user("user3", "u3@test.com", "pass1234")
+        user3 = User.objects.create_user("user3", "u3@test.com", "Test@1234")
         _, error = self.event.reserve(user3)
         self.assertEqual(error, "No spots available.")
 
@@ -87,8 +87,8 @@ class EventModelTests(TestCase):
 
 class ReservationModelTests(TestCase):
     def setUp(self):
-        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
-        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         self.event = Event.objects.create(
             title="Concert",
             description="A great concert",
@@ -108,8 +108,8 @@ class ReservationModelTests(TestCase):
 
 class NotificationTests(TestCase):
     def setUp(self):
-        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
-        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         self.event = Event.objects.create(
             title="Concert",
             description="A great concert",
@@ -138,8 +138,8 @@ class FormTests(TestCase):
         form = RegisterForm(data={
             "username": "newuser",
             "email": "new@test.com",
-            "password": "password123",
-            "confirmation": "different123",
+            "password": "Test@1234",
+            "confirmation": "Diff@1234",
             "role": "attendee",
         })
         self.assertFalse(form.is_valid())
@@ -149,8 +149,8 @@ class FormTests(TestCase):
         form = RegisterForm(data={
             "username": "newuser",
             "email": "new@test.com",
-            "password": "password123",
-            "confirmation": "password123",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
             "role": "attendee",
         })
         self.assertTrue(form.is_valid())
@@ -180,21 +180,21 @@ class BruteFormValidationTests(TestCase):
 
     # ── LoginForm ────────────────────────────────────────────
 
-    def test_login_empty_username(self):
+    def test_login_empty_email(self):
         from .forms import LoginForm
-        form = LoginForm(data={"username": "", "password": "pass"})
+        form = LoginForm(data={"email": "", "password": "Test@1234"})
         self.assertFalse(form.is_valid())
-        self.assertIn("username", form.errors)
+        self.assertIn("email", form.errors)
 
     def test_login_empty_password(self):
         from .forms import LoginForm
-        form = LoginForm(data={"username": "user", "password": ""})
+        form = LoginForm(data={"email": "user@test.com", "password": ""})
         self.assertFalse(form.is_valid())
         self.assertIn("password", form.errors)
 
     def test_login_both_empty(self):
         from .forms import LoginForm
-        form = LoginForm(data={"username": "", "password": ""})
+        form = LoginForm(data={"email": "", "password": ""})
         self.assertFalse(form.is_valid())
 
     def test_login_missing_fields(self):
@@ -202,14 +202,14 @@ class BruteFormValidationTests(TestCase):
         form = LoginForm(data={})
         self.assertFalse(form.is_valid())
 
-    def test_login_username_too_long(self):
+    def test_login_invalid_email(self):
         from .forms import LoginForm
-        form = LoginForm(data={"username": "a" * 151, "password": "pass"})
+        form = LoginForm(data={"email": "not-an-email", "password": "Test@1234"})
         self.assertFalse(form.is_valid())
 
     def test_login_valid(self):
         from .forms import LoginForm
-        form = LoginForm(data={"username": "user", "password": "pass"})
+        form = LoginForm(data={"email": "user@test.com", "password": "Test@1234"})
         self.assertTrue(form.is_valid())
 
     # ── RegisterForm ─────────────────────────────────────────
@@ -218,8 +218,8 @@ class BruteFormValidationTests(TestCase):
         data = {
             "username": "newuser",
             "email": "new@test.com",
-            "password": "password123",
-            "confirmation": "password123",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
             "role": "attendee",
         }
         data.update(overrides)
@@ -248,7 +248,7 @@ class BruteFormValidationTests(TestCase):
 
     def test_register_username_taken(self):
         from .forms import RegisterForm
-        User.objects.create_user("taken", "t@t.com", "pass")
+        User.objects.create_user("taken", "t@t.com", "Test@1234")
         form = RegisterForm(data=self._register_data(username="taken"))
         self.assertFalse(form.is_valid())
         self.assertIn("username", form.errors)
@@ -272,16 +272,16 @@ class BruteFormValidationTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("password", form.errors)
 
-    def test_register_password_exactly_6(self):
+    def test_register_password_exactly_8(self):
         from .forms import RegisterForm
         form = RegisterForm(data=self._register_data(
-            password="123456", confirmation="123456"
+            password="Test@123", confirmation="Test@123"
         ))
         self.assertTrue(form.is_valid())
 
     def test_register_passwords_mismatch(self):
         from .forms import RegisterForm
-        form = RegisterForm(data=self._register_data(confirmation="wrong"))
+        form = RegisterForm(data=self._register_data(confirmation="Wrong@1234"))
         self.assertFalse(form.is_valid())
 
     def test_register_invalid_role(self):
@@ -516,8 +516,8 @@ class BruteViewValidationTests(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.organizer = User.objects.create_user("org", "org@t.com", "pass1234")
-        self.attendee = User.objects.create_user("att", "att@t.com", "pass1234")
+        self.organizer = User.objects.create_user("org", "org@t.com", "Test@1234")
+        self.attendee = User.objects.create_user("att", "att@t.com", "Test@1234")
         assign_role(self.organizer, "organizer")
         assign_role(self.attendee, "attendee")
         UserProfile.objects.create(user=self.organizer)
@@ -529,7 +529,7 @@ class BruteViewValidationTests(TestCase):
     def test_register_post_short_username_rejected(self):
         r = self.client.post(reverse("register"), {
             "username": "ab", "email": "a@b.com",
-            "password": "pass1234", "confirmation": "pass1234", "role": "attendee",
+            "password": "Test@1234", "confirmation": "Test@1234", "role": "attendee",
         })
         self.assertEqual(r.status_code, 200)  # re-render with error
         self.assertFalse(User.objects.filter(username="ab").exists())
@@ -537,7 +537,7 @@ class BruteViewValidationTests(TestCase):
     def test_register_post_mismatch_passwords_rejected(self):
         r = self.client.post(reverse("register"), {
             "username": "newuser", "email": "a@b.com",
-            "password": "pass1234", "confirmation": "different", "role": "attendee",
+            "password": "Test@1234", "confirmation": "Diff@1234", "role": "attendee",
         })
         self.assertEqual(r.status_code, 200)
         self.assertFalse(User.objects.filter(username="newuser").exists())
@@ -545,7 +545,7 @@ class BruteViewValidationTests(TestCase):
     def test_register_post_invalid_role_rejected(self):
         r = self.client.post(reverse("register"), {
             "username": "newuser", "email": "a@b.com",
-            "password": "pass1234", "confirmation": "pass1234", "role": "superadmin",
+            "password": "Test@1234", "confirmation": "Test@1234", "role": "superadmin",
         })
         self.assertEqual(r.status_code, 200)
         self.assertFalse(User.objects.filter(username="newuser").exists())
@@ -553,7 +553,7 @@ class BruteViewValidationTests(TestCase):
     def test_register_post_bad_email_rejected(self):
         r = self.client.post(reverse("register"), {
             "username": "newuser", "email": "not-email",
-            "password": "pass1234", "confirmation": "pass1234", "role": "attendee",
+            "password": "Test@1234", "confirmation": "Test@1234", "role": "attendee",
         })
         self.assertEqual(r.status_code, 200)
         self.assertFalse(User.objects.filter(username="newuser").exists())
@@ -569,7 +569,7 @@ class BruteViewValidationTests(TestCase):
     # ── Create event view ────────────────────────────────────
 
     def test_create_event_past_date_rejected(self):
-        self.client.login(username="org", password="pass1234")
+        self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
             "title": "Past", "description": "desc", "location": "Here",
             "date": (date.today() - timedelta(days=30)).isoformat(),
@@ -579,7 +579,7 @@ class BruteViewValidationTests(TestCase):
         self.assertFalse(Event.objects.filter(title="Past").exists())
 
     def test_create_event_zero_capacity_rejected(self):
-        self.client.login(username="org", password="pass1234")
+        self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
             "title": "Zero", "description": "desc", "location": "Here",
             "date": (date.today() + timedelta(days=7)).isoformat(),
@@ -589,7 +589,7 @@ class BruteViewValidationTests(TestCase):
         self.assertFalse(Event.objects.filter(title="Zero").exists())
 
     def test_create_event_negative_capacity_rejected(self):
-        self.client.login(username="org", password="pass1234")
+        self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
             "title": "Neg", "description": "desc", "location": "Here",
             "date": (date.today() + timedelta(days=7)).isoformat(),
@@ -599,7 +599,7 @@ class BruteViewValidationTests(TestCase):
         self.assertFalse(Event.objects.filter(title="Neg").exists())
 
     def test_create_event_empty_title_rejected(self):
-        self.client.login(username="org", password="pass1234")
+        self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
             "title": "", "description": "desc", "location": "Here",
             "date": (date.today() + timedelta(days=7)).isoformat(),
@@ -609,7 +609,7 @@ class BruteViewValidationTests(TestCase):
         self.assertEqual(Event.objects.count(), 0)
 
     def test_create_event_without_image_ok(self):
-        self.client.login(username="org", password="pass1234")
+        self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
             "title": "NoImg", "description": "desc", "location": "Here",
             "date": (date.today() + timedelta(days=7)).isoformat(),
@@ -621,7 +621,7 @@ class BruteViewValidationTests(TestCase):
     # ── Profile view ─────────────────────────────────────────
 
     def test_profile_post_invalid_email_rejected(self):
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(reverse("profile"), {
             "first_name": "A", "last_name": "B",
             "email": "bad-email", "bio": "hi",
@@ -631,7 +631,7 @@ class BruteViewValidationTests(TestCase):
         self.assertNotEqual(self.attendee.email, "bad-email")
 
     def test_profile_post_bio_too_long_rejected(self):
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(reverse("profile"), {
             "first_name": "A", "last_name": "B",
             "email": "ok@ok.com", "bio": "x" * 501,
@@ -641,7 +641,7 @@ class BruteViewValidationTests(TestCase):
         self.assertNotEqual(len(profile.bio), 501)
 
     def test_profile_post_valid_accepted(self):
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(reverse("profile"), {
             "first_name": "John", "last_name": "Doe",
             "email": "john@doe.com", "bio": "My bio",
@@ -664,7 +664,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_rating_zero_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": 0, "comment": ""}),
@@ -675,7 +675,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_rating_six_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": 6, "comment": ""}),
@@ -685,7 +685,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_rating_negative_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": -1, "comment": ""}),
@@ -695,7 +695,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_comment_too_long_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": 3, "comment": "x" * 1001}),
@@ -705,7 +705,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_missing_rating_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"comment": "no rating"}),
@@ -715,7 +715,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_invalid_json_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             "not json at all",
@@ -725,7 +725,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_valid_accepted(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": 4, "comment": "Nice"}),
@@ -736,7 +736,7 @@ class BruteViewValidationTests(TestCase):
 
     def test_review_api_huge_rating_rejected(self):
         event = self._make_event_and_reserve()
-        self.client.login(username="att", password="pass1234")
+        self.client.login(username="att", password="Test@1234")
         r = self.client.post(
             reverse("api_review", args=[event.id]),
             json.dumps({"rating": 999999, "comment": ""}),
@@ -749,8 +749,8 @@ class BruteViewValidationTests(TestCase):
 class APITests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
-        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         assign_role(self.attendee, "attendee")
         assign_role(self.organizer, "organizer")
         UserProfile.objects.create(user=self.attendee)
@@ -789,26 +789,26 @@ class APITests(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_api_reserve_success(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.post(reverse("api_reserve", args=[self.event.id]))
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["message"], "Reservation confirmed!")
 
     def test_api_reserve_duplicate(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         self.client.post(reverse("api_reserve", args=[self.event.id]))
         response = self.client.post(reverse("api_reserve", args=[self.event.id]))
         self.assertEqual(response.status_code, 400)
 
     def test_api_cancel_success(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         self.client.post(reverse("api_reserve", args=[self.event.id]))
         response = self.client.post(reverse("api_cancel", args=[self.event.id]))
         self.assertEqual(response.status_code, 200)
 
     def test_api_review_success(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
         response = self.client.post(
             reverse("api_review", args=[self.event.id]),
@@ -820,7 +820,7 @@ class APITests(TestCase):
         self.assertEqual(data["review"]["rating"], 5)
 
     def test_api_review_no_reservation(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.post(
             reverse("api_review", args=[self.event.id]),
             data=json.dumps({"rating": 5, "comment": "Nope"}),
@@ -829,7 +829,7 @@ class APITests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_api_toggle_favorite(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.post(reverse("api_favorite", args=[self.event.id]))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["favorited"])
@@ -838,14 +838,14 @@ class APITests(TestCase):
         self.assertFalse(response.json()["favorited"])
 
     def test_api_notifications(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.get(reverse("api_notifications"))
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("unread_count", data)
 
     def test_api_mark_read(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         Notification.objects.create(
             recipient=self.attendee,
             notification_type="event_updated",
@@ -861,8 +861,8 @@ class APITests(TestCase):
 class PageViewTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.organizer = User.objects.create_user("organizer", "org@test.com", "pass1234")
-        self.attendee = User.objects.create_user("attendee", "att@test.com", "pass1234")
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         assign_role(self.attendee, "attendee")
         assign_role(self.organizer, "organizer")
         UserProfile.objects.create(user=self.attendee)
@@ -903,17 +903,17 @@ class PageViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_create_event_requires_organizer(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.get(reverse("create_event"))
         self.assertEqual(response.status_code, 403)
 
     def test_create_event_allowed_for_organizer(self):
-        self.client.login(username="organizer", password="pass1234")
+        self.client.login(username="organizer", password="Test@1234")
         response = self.client.get(reverse("create_event"))
         self.assertEqual(response.status_code, 200)
 
     def test_my_events_requires_organizer(self):
-        self.client.login(username="attendee", password="pass1234")
+        self.client.login(username="attendee", password="Test@1234")
         response = self.client.get(reverse("my_events"))
         self.assertEqual(response.status_code, 403)
 
@@ -934,43 +934,43 @@ class AuthTests(TestCase):
         response = self.client.post(reverse("register"), {
             "username": "newuser",
             "email": "new@test.com",
-            "password": "password123",
-            "confirmation": "password123",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
             "role": "attendee",
         })
         self.assertEqual(response.status_code, 302)
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
     def test_register_duplicate_username(self):
-        User.objects.create_user("taken", "t@test.com", "pass1234")
+        User.objects.create_user("taken", "t@test.com", "Test@1234")
         response = self.client.post(reverse("register"), {
             "username": "taken",
             "email": "new@test.com",
-            "password": "password123",
-            "confirmation": "password123",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
             "role": "attendee",
         })
         self.assertEqual(response.status_code, 200)
 
     def test_login_success(self):
-        User.objects.create_user("testuser", "t@test.com", "pass1234")
+        User.objects.create_user("testuser", "t@test.com", "Test@1234")
         response = self.client.post(reverse("login"), {
-            "username": "testuser",
-            "password": "pass1234",
+            "email": "t@test.com",
+            "password": "Test@1234",
         })
         self.assertEqual(response.status_code, 302)
 
     def test_login_failure(self):
         response = self.client.post(reverse("login"), {
-            "username": "nobody",
-            "password": "wrong",
+            "email": "nobody@test.com",
+            "password": "Wrong@1234",
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Invalid")
 
     def test_logout(self):
-        User.objects.create_user("testuser", "t@test.com", "pass1234")
-        self.client.login(username="testuser", password="pass1234")
+        User.objects.create_user("testuser", "t@test.com", "Test@1234")
+        self.client.login(username="testuser", password="Test@1234")
         response = self.client.get(reverse("logout"))
         self.assertEqual(response.status_code, 302)
 
@@ -985,8 +985,8 @@ class EndToEndOrganizerTests(TestCase):
         response = c.post(reverse("register"), {
             "username": "org_e2e",
             "email": "org_e2e@test.com",
-            "password": "securepass123",
-            "confirmation": "securepass123",
+            "password": "Secure@123",
+            "confirmation": "Secure@123",
             "role": "organizer",
         })
         self.assertEqual(response.status_code, 302)
@@ -1038,7 +1038,7 @@ class EndToEndOrganizerTests(TestCase):
         self.assertContains(response, "Django Workshop v2")
 
         # 7. Create an attendee who reserves
-        att = User.objects.create_user("att_e2e", "att@test.com", "pass1234")
+        att = User.objects.create_user("att_e2e", "att@test.com", "Test@1234")
         assign_role(att, "attendee")
         UserProfile.objects.create(user=att)
         reservation, err = event.reserve(att)
@@ -1062,12 +1062,12 @@ class EndToEndOrganizerTests(TestCase):
         c = Client()
 
         # Organizer A
-        org_a = User.objects.create_user("org_a", "a@test.com", "pass1234")
+        org_a = User.objects.create_user("org_a", "a@test.com", "Test@1234")
         assign_role(org_a, "organizer")
         UserProfile.objects.create(user=org_a)
 
         # Organizer B creates event
-        org_b = User.objects.create_user("org_b", "b@test.com", "pass1234")
+        org_b = User.objects.create_user("org_b", "b@test.com", "Test@1234")
         assign_role(org_b, "organizer")
         UserProfile.objects.create(user=org_b)
         event = Event.objects.create(
@@ -1078,7 +1078,7 @@ class EndToEndOrganizerTests(TestCase):
         )
 
         # Organizer A tries to access B's attendees/CSV
-        c.login(username="org_a", password="pass1234")
+        c.login(username="org_a", password="Test@1234")
         response = c.get(reverse("attendees", args=[event.id]))
         self.assertEqual(response.status_code, 404)
 
@@ -1091,7 +1091,7 @@ class EndToEndAttendeeTests(TestCase):
     """Full attendee journey: register → browse → reserve → review → favorite → cancel."""
 
     def setUp(self):
-        self.organizer = User.objects.create_user("org", "org@test.com", "pass1234")
+        self.organizer = User.objects.create_user("org", "org@test.com", "Test@1234")
         assign_role(self.organizer, "organizer")
         UserProfile.objects.create(user=self.organizer)
         self.category = Category.objects.create(name="Music")
@@ -1113,8 +1113,8 @@ class EndToEndAttendeeTests(TestCase):
         c.post(reverse("register"), {
             "username": "jazz_fan",
             "email": "fan@test.com",
-            "password": "jazzpass123",
-            "confirmation": "jazzpass123",
+            "password": "Jazz@1234",
+            "confirmation": "Jazz@1234",
             "role": "attendee",
         })
         user = User.objects.get(username="jazz_fan")
@@ -1199,10 +1199,10 @@ class EndToEndAttendeeTests(TestCase):
 
     def test_attendee_cannot_access_organizer_pages(self):
         c = Client()
-        att = User.objects.create_user("att_rbac", "rbac@test.com", "pass1234")
+        att = User.objects.create_user("att_rbac", "rbac@test.com", "Test@1234")
         assign_role(att, "attendee")
         UserProfile.objects.create(user=att)
-        c.login(username="att_rbac", password="pass1234")
+        c.login(username="att_rbac", password="Test@1234")
 
         # All organizer-only pages should return 403
         self.assertEqual(c.get(reverse("create_event")).status_code, 403)
@@ -1216,7 +1216,7 @@ class EndToEndCapacityTests(TestCase):
     """Tests the full reservation flow when capacity is reached."""
 
     def setUp(self):
-        self.org = User.objects.create_user("org", "org@test.com", "pass1234")
+        self.org = User.objects.create_user("org", "org@test.com", "Test@1234")
         assign_role(self.org, "organizer")
         UserProfile.objects.create(user=self.org)
         self.event = Event.objects.create(
@@ -1232,17 +1232,17 @@ class EndToEndCapacityTests(TestCase):
     def test_capacity_exhaustion_and_recovery(self):
         """Fill all spots, fail to reserve, cancel one, reserve again."""
         # Two attendees fill the event
-        att1 = User.objects.create_user("att1", "a1@test.com", "pass1234")
-        att2 = User.objects.create_user("att2", "a2@test.com", "pass1234")
-        att3 = User.objects.create_user("att3", "a3@test.com", "pass1234")
+        att1 = User.objects.create_user("att1", "a1@test.com", "Test@1234")
+        att2 = User.objects.create_user("att2", "a2@test.com", "Test@1234")
+        att3 = User.objects.create_user("att3", "a3@test.com", "Test@1234")
         for u in [att1, att2, att3]:
             assign_role(u, "attendee")
             UserProfile.objects.create(user=u)
 
         c1, c2, c3 = Client(), Client(), Client()
-        c1.login(username="att1", password="pass1234")
-        c2.login(username="att2", password="pass1234")
-        c3.login(username="att3", password="pass1234")
+        c1.login(username="att1", password="Test@1234")
+        c2.login(username="att2", password="Test@1234")
+        c3.login(username="att3", password="Test@1234")
 
         # att1 reserves — success
         r = c1.post(reverse("api_reserve", args=[self.event.id]))
@@ -1275,11 +1275,11 @@ class EndToEndCapacityTests(TestCase):
         self.assertEqual(self.event.spots_left(), 0)
 
     def test_duplicate_reserve_returns_error(self):
-        att = User.objects.create_user("dup", "dup@test.com", "pass1234")
+        att = User.objects.create_user("dup", "dup@test.com", "Test@1234")
         assign_role(att, "attendee")
         UserProfile.objects.create(user=att)
         c = Client()
-        c.login(username="dup", password="pass1234")
+        c.login(username="dup", password="Test@1234")
 
         r = c.post(reverse("api_reserve", args=[self.event.id]))
         self.assertEqual(r.status_code, 200)
@@ -1294,10 +1294,10 @@ class EndToEndNotificationFlowTests(TestCase):
     """Tests that all actions produce correct notifications for all parties."""
 
     def setUp(self):
-        self.org = User.objects.create_user("org_nf", "org@test.com", "pass1234")
+        self.org = User.objects.create_user("org_nf", "org@test.com", "Test@1234")
         assign_role(self.org, "organizer")
         UserProfile.objects.create(user=self.org)
-        self.att = User.objects.create_user("att_nf", "att@test.com", "pass1234")
+        self.att = User.objects.create_user("att_nf", "att@test.com", "Test@1234")
         assign_role(self.att, "attendee")
         UserProfile.objects.create(user=self.att)
         self.event = Event.objects.create(
@@ -1310,9 +1310,9 @@ class EndToEndNotificationFlowTests(TestCase):
             capacity=10,
         )
         self.c_att = Client()
-        self.c_att.login(username="att_nf", password="pass1234")
+        self.c_att.login(username="att_nf", password="Test@1234")
         self.c_org = Client()
-        self.c_org.login(username="org_nf", password="pass1234")
+        self.c_org.login(username="org_nf", password="Test@1234")
 
     def test_reserve_notifies_both_parties(self):
         r = self.c_att.post(reverse("api_reserve", args=[self.event.id]))
@@ -1374,8 +1374,8 @@ class EndToEndProfileTests(TestCase):
         c.post(reverse("register"), {
             "username": "profile_user",
             "email": "prof@test.com",
-            "password": "profilepass123",
-            "confirmation": "profilepass123",
+            "password": "Profile@1",
+            "confirmation": "Profile@1",
             "role": "attendee",
         })
 
@@ -1409,7 +1409,7 @@ class EndToEndSearchAndFilterTests(TestCase):
     """Tests event search, category filter, and pagination via the API."""
 
     def setUp(self):
-        org = User.objects.create_user("org_sf", "org@test.com", "pass1234")
+        org = User.objects.create_user("org_sf", "org@test.com", "Test@1234")
         cat1 = Category.objects.create(name="Sports")
         cat2 = Category.objects.create(name="Technology")
         base_date = date.today() + timedelta(days=5)
@@ -1463,3 +1463,347 @@ class EndToEndSearchAndFilterTests(TestCase):
         data = r.json()
         self.assertTrue(all("Sports" == e.get("category") or "Event" in e["title"]
                             for e in data["events"]))
+
+
+# ==========================================================================
+# AJAX Auth Tests — JSON responses for frontend AJAX submissions
+# ==========================================================================
+class AjaxAuthTests(TestCase):
+    AJAX_HEADERS = {"HTTP_ACCEPT": "application/json"}
+
+    def setUp(self):
+        self.user = User.objects.create_user("testuser", "test@test.com", "Test@1234")
+        UserProfile.objects.create(user=self.user)
+
+    # ---- Login AJAX ----
+
+    def test_login_ajax_success(self):
+        r = self.client.post(reverse("login"), {
+            "email": "test@test.com",
+            "password": "Test@1234",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertIn("redirect", data)
+        self.assertEqual(data["redirect"], "/")
+
+    def test_login_ajax_invalid_credentials(self):
+        r = self.client.post(reverse("login"), {
+            "email": "test@test.com",
+            "password": "Wrong@1234",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+        self.assertIn("Invalid", data["error"])
+
+    def test_login_ajax_empty_fields(self):
+        r = self.client.post(reverse("login"), {
+            "email": "",
+            "password": "",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_login_ajax_missing_password(self):
+        r = self.client.post(reverse("login"), {
+            "email": "test@test.com",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_login_non_ajax_still_renders_html(self):
+        r = self.client.post(reverse("login"), {
+            "email": "test@test.com",
+            "password": "Wrong@1234",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Invalid")
+        self.assertEqual(r["Content-Type"], "text/html; charset=utf-8")
+
+    def test_login_ajax_returns_json_content_type(self):
+        r = self.client.post(reverse("login"), {
+            "email": "test@test.com",
+            "password": "Test@1234",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r["Content-Type"], "application/json")
+
+    # ---- Register AJAX ----
+
+    def test_register_ajax_success(self):
+        r = self.client.post(reverse("register"), {
+            "username": "newuser",
+            "email": "new@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertIn("redirect", data)
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+
+    def test_register_ajax_duplicate_username(self):
+        r = self.client.post(reverse("register"), {
+            "username": "testuser",
+            "email": "dup@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+        self.assertIn("taken", data["error"].lower())
+
+    def test_register_ajax_password_mismatch(self):
+        r = self.client.post(reverse("register"), {
+            "username": "mismatch",
+            "email": "m@test.com",
+            "password": "Test@1234",
+            "confirmation": "Diff@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_ajax_invalid_email(self):
+        r = self.client.post(reverse("register"), {
+            "username": "bademail",
+            "email": "notanemail",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_ajax_invalid_role(self):
+        r = self.client.post(reverse("register"), {
+            "username": "badrole",
+            "email": "bad@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "admin",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_ajax_short_username(self):
+        r = self.client.post(reverse("register"), {
+            "username": "ab",
+            "email": "s@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_ajax_short_password(self):
+        r = self.client.post(reverse("register"), {
+            "username": "shortpw",
+            "email": "sp@test.com",
+            "password": "12345",
+            "confirmation": "12345",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_ajax_empty_fields(self):
+        r = self.client.post(reverse("register"), {
+            "username": "",
+            "email": "",
+            "password": "",
+            "confirmation": "",
+            "role": "",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r.status_code, 400)
+        data = r.json()
+        self.assertIn("error", data)
+
+    def test_register_non_ajax_still_renders_html(self):
+        r = self.client.post(reverse("register"), {
+            "username": "testuser",
+            "email": "dup@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/html; charset=utf-8")
+
+    def test_register_ajax_returns_json_content_type(self):
+        r = self.client.post(reverse("register"), {
+            "username": "jsonuser",
+            "email": "json@test.com",
+            "password": "Test@1234",
+            "confirmation": "Test@1234",
+            "role": "attendee",
+        }, **self.AJAX_HEADERS)
+        self.assertEqual(r["Content-Type"], "application/json")
+
+
+class SoftDeleteModelTests(TestCase):
+    """Tests for SoftDeleteModel behaviour across all models."""
+
+    def setUp(self):
+        self.organizer = User.objects.create_user("organizer", "org@test.com", "Test@1234")
+        self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
+        self.category = Category.objects.create(name="Music")
+        self.event = Event.objects.create(
+            title="Concert",
+            description="A great concert",
+            category=self.category,
+            organizer=self.organizer,
+            location="Lisbon",
+            date=date.today() + timedelta(days=7),
+            time=time(20, 0),
+            capacity=10,
+        )
+
+    # ── Basic soft delete lifecycle ──────────────────────────────────
+
+    def test_soft_delete_sets_deleted_at(self):
+        self.event.delete()
+        self.event.refresh_from_db()
+        self.assertIsNotNone(self.event.deleted_at)
+
+    def test_soft_deleted_excluded_from_default_manager(self):
+        self.event.delete()
+        self.assertFalse(Event.objects.filter(pk=self.event.pk).exists())
+
+    def test_soft_deleted_visible_in_all_objects(self):
+        self.event.delete()
+        self.assertTrue(Event.all_objects.filter(pk=self.event.pk).exists())
+
+    def test_restore_clears_deleted_at(self):
+        self.event.delete()
+        self.event.restore()
+        self.event.refresh_from_db()
+        self.assertIsNone(self.event.deleted_at)
+        self.assertTrue(Event.objects.filter(pk=self.event.pk).exists())
+
+    def test_hard_delete_removes_from_database(self):
+        pk = self.event.pk
+        self.event.hard_delete()
+        self.assertFalse(Event.all_objects.filter(pk=pk).exists())
+
+    def test_queryset_delete_soft_deletes_bulk(self):
+        Event.objects.filter(pk=self.event.pk).delete()
+        self.assertFalse(Event.objects.filter(pk=self.event.pk).exists())
+        self.assertTrue(Event.all_objects.filter(pk=self.event.pk).exists())
+
+    # ── Category soft delete ─────────────────────────────────────────
+
+    def test_category_soft_delete(self):
+        self.category.delete()
+        self.assertFalse(Category.objects.filter(pk=self.category.pk).exists())
+        self.assertTrue(Category.all_objects.filter(pk=self.category.pk).exists())
+
+    def test_category_restore(self):
+        self.category.delete()
+        self.category.restore()
+        self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
+
+    # ── UserProfile soft delete ──────────────────────────────────────
+
+    def test_userprofile_soft_delete(self):
+        profile = UserProfile.objects.create(user=self.organizer)
+        profile.delete()
+        self.assertFalse(UserProfile.objects.filter(user=self.organizer).exists())
+        self.assertTrue(UserProfile.all_objects.filter(user=self.organizer).exists())
+
+    # ── Reservation soft delete & re-reserve ─────────────────────────
+
+    def test_reservation_soft_delete(self):
+        reservation, _ = self.event.reserve(self.attendee)
+        reservation.delete()
+        self.assertFalse(Reservation.objects.filter(pk=reservation.pk).exists())
+        self.assertTrue(Reservation.all_objects.filter(pk=reservation.pk).exists())
+
+    def test_reserve_restores_soft_deleted_reservation(self):
+        reservation, _ = self.event.reserve(self.attendee)
+        reservation.delete()
+        new_reservation, error = self.event.reserve(self.attendee)
+        self.assertIsNone(error)
+        self.assertIsNotNone(new_reservation)
+        self.assertEqual(new_reservation.pk, reservation.pk)
+        self.assertIsNone(new_reservation.deleted_at)
+
+    # ── Favorite soft delete & toggle cycle ──────────────────────────
+
+    def test_favorite_soft_delete(self):
+        self.event.toggle_favorite(self.attendee)
+        fav = Favorite.objects.get(user=self.attendee, event=self.event)
+        fav.delete()
+        self.assertFalse(Favorite.objects.filter(pk=fav.pk).exists())
+        self.assertTrue(Favorite.all_objects.filter(pk=fav.pk).exists())
+
+    def test_toggle_favorite_restores_soft_deleted(self):
+        self.event.toggle_favorite(self.attendee)  # add
+        self.event.toggle_favorite(self.attendee)  # remove (soft delete)
+        result = self.event.toggle_favorite(self.attendee)  # restore
+        self.assertTrue(result)
+        self.assertTrue(Favorite.objects.filter(user=self.attendee, event=self.event).exists())
+
+    # ── Review soft delete & re-review ───────────────────────────────
+
+    def test_review_soft_delete(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        review, _ = self.event.add_review(self.attendee, 5, "Great!")
+        review.delete()
+        self.assertFalse(Review.objects.filter(pk=review.pk).exists())
+        self.assertTrue(Review.all_objects.filter(pk=review.pk).exists())
+
+    def test_add_review_restores_soft_deleted(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        review, _ = self.event.add_review(self.attendee, 5, "Great!")
+        review.delete()
+        new_review, error = self.event.add_review(self.attendee, 3, "Okay")
+        self.assertIsNone(error)
+        self.assertIsNotNone(new_review)
+        self.assertEqual(new_review.pk, review.pk)
+        self.assertEqual(new_review.rating, 3)
+
+    # ── Notification soft delete ─────────────────────────────────────
+
+    def test_notification_soft_delete(self):
+        notif = Notification.objects.create(
+            recipient=self.attendee,
+            notification_type="reservation",
+            title="Test",
+            message="msg",
+        )
+        notif.delete()
+        self.assertFalse(Notification.objects.filter(pk=notif.pk).exists())
+        self.assertTrue(Notification.all_objects.filter(pk=notif.pk).exists())
+
+    # ── UniqueConstraint allows re-creation after soft delete ────────
+
+    def test_unique_reservation_after_soft_delete(self):
+        reservation, _ = self.event.reserve(self.attendee)
+        reservation.delete()
+        new_res, error = self.event.reserve(self.attendee)
+        self.assertIsNone(error)
+
+    def test_unique_review_after_soft_delete(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        review, _ = self.event.add_review(self.attendee, 5, "Great!")
+        review.delete()
+        new_review, error = self.event.add_review(self.attendee, 4, "Good")
+        self.assertIsNone(error)
+
+    def test_unique_favorite_after_soft_delete(self):
+        self.event.toggle_favorite(self.attendee)  # add
+        self.event.toggle_favorite(self.attendee)  # soft delete
+        result = self.event.toggle_favorite(self.attendee)  # restore
+        self.assertTrue(result)

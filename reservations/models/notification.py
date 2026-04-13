@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from .base import SoftDeleteModel
 
-class Notification(models.Model):
+
+class Notification(SoftDeleteModel):
     TYPES = [
         ("reservation_confirmed", "Reservation Confirmed"),
         ("reservation_cancelled", "Reservation Cancelled"),
@@ -11,7 +13,7 @@ class Notification(models.Model):
         ("event_reminder", "Event Reminder"),
     ]
 
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    recipient = models.ForeignKey(User, on_delete=models.PROTECT, related_name="notifications")
     notification_type = models.CharField(max_length=30, choices=TYPES)
     title = models.CharField(max_length=200)
     message = models.TextField()

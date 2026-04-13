@@ -21,11 +21,17 @@
         </div>
         <div class="form-card__group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password">
+            <div class="form-card__password-wrapper">
+                <input type="password" id="password" name="password">
+                <button type="button" class="form-card__password-toggle" aria-label="Toggle password visibility">👁</button>
+            </div>
         </div>
         <div class="form-card__group">
             <label for="confirmation">Confirm Password</label>
-            <input type="password" id="confirmation" name="confirmation">
+            <div class="form-card__password-wrapper">
+                <input type="password" id="confirmation" name="confirmation">
+                <button type="button" class="form-card__password-toggle" aria-label="Toggle password visibility">👁</button>
+            </div>
         </div>
         <div class="form-card__group">
             <label for="role">I want to</label>
@@ -41,5 +47,5 @@
 {% endblock %}
 
 {% block script %}
-<script src="{% static 'reservations/register.js' %}"></script>
+<script src="{% static 'reservations/register.js' %}?v=10"></script>
 {% endblock %}

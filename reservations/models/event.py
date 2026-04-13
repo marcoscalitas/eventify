@@ -1,16 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from .base import SoftDeleteModel
 from .category import Category
 
 
-class Event(models.Model):
+class Event(SoftDeleteModel):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
     )
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    organizer = models.ForeignKey(User, on_delete=models.PROTECT, related_name="organized_events")
     location = models.CharField(max_length=255)
     date = models.DateField()
     time = models.TimeField()
@@ -42,20 +43,26 @@ class Event(models.Model):
         if self.spots_left() <= 0:
             return None, "No spots available."
 
-        try:
-            reservation, created = Reservation.objects.get_or_create(
-                user=user, event=self,
-                defaults={"status": Reservation.CONFIRMED}
-            )
-        except IntegrityError:
-            return None, "Already reserved."
+        existing = Reservation.all_objects.filter(user=user, event=self).first()
 
-        if not created and reservation.status == Reservation.CONFIRMED:
-            return None, "Already reserved."
-
-        if not created:
-            reservation.status = Reservation.CONFIRMED
-            reservation.save()
+        if existing is not None:
+            if existing.deleted_at is not None:
+                existing.restore()
+                existing.status = Reservation.CONFIRMED
+                existing.save()
+            elif existing.status == Reservation.CONFIRMED:
+                return None, "Already reserved."
+            else:
+                existing.status = Reservation.CONFIRMED
+                existing.save()
+            reservation = existing
+        else:
+            try:
+                reservation = Reservation.objects.create(
+                    user=user, event=self, status=Reservation.CONFIRMED
+                )
+            except IntegrityError:
+                return None, "Already reserved."
 
         from ..helpers import notify_reservation_confirmed
         notify_reservation_confirmed(user, self)
@@ -72,12 +79,20 @@ class Event(models.Model):
         if not has_reservation:
             return None, "You must have a reservation to review."
 
-        if Review.objects.filter(user=user, event=self).exists():
+        existing = Review.all_objects.filter(user=user, event=self).first()
+        if existing is not None and existing.deleted_at is None:
             return None, "You already reviewed this event."
 
-        review = Review.objects.create(
-            user=user, event=self, rating=rating, comment=comment
-        )
+        if existing is not None:
+            existing.restore()
+            existing.rating = rating
+            existing.comment = comment
+            existing.save()
+            review = existing
+        else:
+            review = Review.objects.create(
+                user=user, event=self, rating=rating, comment=comment
+            )
 
         from ..helpers import notify_new_review
         notify_new_review(user, self, rating)
@@ -87,12 +102,17 @@ class Event(models.Model):
         """Toggle favorite for a user. Returns True if favorited, False if removed."""
         from .favorite import Favorite
 
-        favorite, created = Favorite.objects.get_or_create(
-            user=user, event=self
-        )
-        if not created:
-            favorite.delete()
+        existing = Favorite.all_objects.filter(user=user, event=self).first()
+
+        if existing is None:
+            Favorite.objects.create(user=user, event=self)
+            return True
+
+        if existing.deleted_at is None:
+            existing.delete()
             return False
+
+        existing.restore()
         return True
 
     def notify_updated(self):

@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from .base import SoftDeleteModel
 from .event import Event
 
 
-class Reservation(models.Model):
+class Reservation(SoftDeleteModel):
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
     STATUS_CHOICES = [
@@ -12,13 +13,19 @@ class Reservation(models.Model):
         (CANCELLED, "Cancelled"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reservations")
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="reservations")
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="reservations")
+    event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="reservations")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=CONFIRMED)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user", "event")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "event"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_active_reservation",
+            )
+        ]
 
     def cancel(self):
         self.status = self.CANCELLED

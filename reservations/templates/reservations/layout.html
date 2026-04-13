@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Eventify{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}?v=8">
+    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}?v=10">
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark');</script>
 </head>
 <body>
@@ -49,10 +49,12 @@
         <p>&copy; 2026 Eventify — CS50W Capstone Project</p>
     </footer>
 
-    <script src="{% static 'reservations/app.js' %}"></script>
-    <script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
+    <script src="{% static 'reservations/helpers.js' %}?v=10"></script>
+    <script src="{% static 'reservations/validation.js' %}?v=10"></script>
+    <script src="{% static 'reservations/app.js' %}?v=10"></script>
+    <script src="https://unpkg.com/just-validate@4.3.0/dist/just-validate.production.min.js"></script>
     {% if user.is_authenticated %}
-    <script src="{% static 'reservations/notifications.js' %}"></script>
+    <script src="{% static 'reservations/notifications.js' %}?v=10"></script>
     {% endif %}
     {% block script %}{% endblock %}
 </body>

@@ -1,7 +1,9 @@
 from django.db import models
 
+from .base import SoftDeleteModel
 
-class Category(models.Model):
+
+class Category(SoftDeleteModel):
     name = models.CharField(max_length=64, unique=True)
 
     class Meta:
