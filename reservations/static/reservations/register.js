@@ -21,4 +21,5 @@ new JustValidate('#registerForm', { errorLabelCssClass: ['field-error'] })
     ])
     .addField('#role', [
         { rule: 'required', errorMessage: 'Select a role.' },
-    ]);
+    ])
+    .onSuccess((e) => e.target.submit());

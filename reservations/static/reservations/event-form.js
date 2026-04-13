@@ -27,4 +27,5 @@ new JustValidate('#eventForm', { errorLabelCssClass: ['field-error'] })
             validator: () => validateImageFile('image'),
             errorMessage: 'Image must be JPEG, PNG, GIF or WebP and under 5 MB.',
         },
-    ]);
+    ])
+    .onSuccess((e) => e.target.submit());

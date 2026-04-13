@@ -7,4 +7,5 @@ new JustValidate('#profileForm', { errorLabelCssClass: ['field-error'] })
             validator: () => validateImageFile('avatar'),
             errorMessage: 'Allowed: JPG, PNG, GIF, WebP (max 5 MB).',
         },
-    ]);
+    ])
+    .onSuccess((e) => e.target.submit());
