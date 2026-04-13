@@ -20,7 +20,17 @@
 </section>
 
 <section class="events-grid" id="eventsGrid">
-    <div class="events-grid__loading">Loading events...</div>
+    {% for i in "123" %}
+    <div class="skeleton">
+        <div class="skeleton__image"></div>
+        <div class="skeleton__body">
+            <div class="skeleton__line skeleton__line--title"></div>
+            <div class="skeleton__line skeleton__line--medium"></div>
+            <div class="skeleton__line skeleton__line--short"></div>
+            <div class="skeleton__line skeleton__line--full"></div>
+        </div>
+    </div>
+    {% endfor %}
 </section>
 
 <div class="pagination" id="pagination"></div>

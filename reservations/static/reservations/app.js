@@ -101,13 +101,66 @@ function validateImageFile(inputId) {
     return ALLOWED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_IMAGE_SIZE;
 }
 
-// Mobile nav toggle
+// Confirm modal (replaces native confirm())
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal__overlay"></div>
+            <div class="modal__content">
+                <p class="modal__message">${escapeHtml(message)}</p>
+                <div class="modal__actions">
+                    <button class="modal__btn modal__btn--cancel" type="button">No</button>
+                    <button class="modal__btn modal__btn--confirm" type="button">Yes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add('modal--active'));
+
+        function close(result) {
+            modal.classList.remove('modal--active');
+            modal.addEventListener('transitionend', () => modal.remove());
+            resolve(result);
+        }
+
+        modal.querySelector('.modal__btn--confirm').addEventListener('click', () => close(true));
+        modal.querySelector('.modal__btn--cancel').addEventListener('click', () => close(false));
+        modal.querySelector('.modal__overlay').addEventListener('click', () => close(false));
+    });
+}
+
+// Mobile nav toggle + Dark mode toggle
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('navToggle');
     const links = document.getElementById('navLinks');
     if (toggle && links) {
         toggle.addEventListener('click', () => {
             links.classList.toggle('active');
+        });
+    }
+
+    // Dark mode
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                themeToggle.textContent = '🌙';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.textContent = '☀️';
+            }
         });
     }
 });

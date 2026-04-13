@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cancel
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            if (!confirm('Cancel your reservation?')) return;
+        cancelBtn.addEventListener('click', async () => {
+            if (!await showConfirm('Cancel your reservation?')) return;
             postAction(cancelBtn, `/api/event/${cancelBtn.dataset.eventId}/cancel`)
             .then(data => {
                 showToast(data.message);

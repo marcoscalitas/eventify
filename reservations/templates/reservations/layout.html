@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Eventify{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'reservations/styles.css' %}?v=8">
+    <script>if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark');</script>
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to content</a>
@@ -15,6 +16,7 @@
         <div class="navbar__container">
             <a href="{% url 'index' %}" class="navbar__brand">🎫 Eventify</a>
             <button class="navbar__toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+            <button class="navbar__theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
             <ul class="navbar__links" id="navLinks">
                 <li><a href="{% url 'index' %}" class="navbar__link">Events</a></li>
                 {% if user.is_authenticated %}

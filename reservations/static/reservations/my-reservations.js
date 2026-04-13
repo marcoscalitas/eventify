@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.cancel-res-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!confirm('Cancel this reservation?')) return;
+        btn.addEventListener('click', async () => {
+            if (!await showConfirm('Cancel this reservation?')) return;
             postAction(btn, `/api/event/${btn.dataset.eventId}/cancel`)
             .then(data => {
                 showToast(data.message);

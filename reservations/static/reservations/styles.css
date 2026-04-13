@@ -20,10 +20,32 @@
     --gray-500: #6b7280;
     --gray-700: #374151;
     --gray-900: #111827;
+    --surface: #ffffff;
     --radius: 8px;
     --radius-lg: 12px;
     --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
     --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --primary-light: #1e1b4b;
+    --danger: #f87171;
+    --danger-light: #1c1111;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --gray-50: #111827;
+    --gray-100: #1f2937;
+    --gray-200: #374151;
+    --gray-300: #4b5563;
+    --gray-500: #9ca3af;
+    --gray-700: #d1d5db;
+    --gray-900: #f9fafb;
+    --surface: #1f2937;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.2);
 }
 
 /* ===== Base & Layout ===== */
@@ -52,7 +74,7 @@ a:hover { text-decoration: underline; }
    NAVBAR Block
    ========================================================================== */
 .navbar {
-    background: white;
+    background: var(--surface);
     border-bottom: 1px solid var(--gray-200);
     position: sticky;
     top: 0;
@@ -84,6 +106,21 @@ a:hover { text-decoration: underline; }
     font-size: 1.5rem;
     cursor: pointer;
     color: var(--gray-700);
+}
+
+.navbar__theme-toggle {
+    background: none;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 1.15rem;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.navbar__theme-toggle:hover {
+    background: var(--gray-100);
 }
 
 .navbar__links {
@@ -164,7 +201,7 @@ a:hover { text-decoration: underline; }
     border: 1px solid var(--gray-300);
     border-radius: var(--radius);
     font-size: 0.95rem;
-    background: white;
+    background: var(--surface);
 }
 
 .filters__input { flex: 1; min-width: 200px; }
@@ -195,10 +232,52 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
+   SKELETON Block (loading placeholder)
+   ========================================================================== */
+@keyframes skeleton-pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.skeleton {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton__image {
+    height: 180px;
+    background: var(--gray-200);
+}
+
+.skeleton__body {
+    padding: 1.25rem;
+}
+
+.skeleton__line {
+    height: 0.9rem;
+    background: var(--gray-200);
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton__line--title {
+    width: 70%;
+    height: 1.15rem;
+}
+
+.skeleton__line--short { width: 50%; }
+.skeleton__line--medium { width: 80%; }
+.skeleton__line--full { width: 100%; }
+
+/* ==========================================================================
    EVENT-CARD Block
    ========================================================================== */
 .event-card {
-    background: white;
+    background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -309,7 +388,7 @@ a:hover { text-decoration: underline; }
 .event-detail {
     max-width: 800px;
     margin: 0 auto;
-    background: white;
+    background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -480,7 +559,7 @@ a:hover { text-decoration: underline; }
 .form-card {
     max-width: 500px;
     margin: 2rem auto;
-    background: white;
+    background: var(--surface);
     padding: 2rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
@@ -666,7 +745,7 @@ a:hover { text-decoration: underline; }
 }
 
 .events-list__item {
-    background: white;
+    background: var(--surface);
     padding: 1.25rem;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
@@ -699,7 +778,7 @@ a:hover { text-decoration: underline; }
     align-items: center;
     margin-bottom: 2rem;
     padding: 2rem;
-    background: white;
+    background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
 }
@@ -741,7 +820,7 @@ a:hover { text-decoration: underline; }
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--surface);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow);
@@ -786,7 +865,7 @@ a:hover { text-decoration: underline; }
     display: flex;
     gap: 1rem;
     padding: 1rem 1.25rem;
-    background: white;
+    background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     align-items: flex-start;
@@ -811,7 +890,7 @@ a:hover { text-decoration: underline; }
 }
 
 .notification--unread .notification__icon {
-    background: white;
+    background: var(--surface);
 }
 
 .notification__content { flex: 1; min-width: 0; }
@@ -947,6 +1026,83 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
+   MODAL Block (confirm dialog)
+   ========================================================================== */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s, visibility 0.25s;
+}
+
+.modal--active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal__content {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal__message {
+    font-size: 1.1rem;
+    color: var(--gray-900);
+    margin-bottom: 1.5rem;
+}
+
+.modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.modal__btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal__btn--confirm {
+    background: var(--danger);
+    color: white;
+}
+
+.modal__btn--confirm:hover {
+    background: #b91c1c;
+}
+
+.modal__btn--cancel {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.modal__btn--cancel:hover {
+    background: var(--gray-300);
+}
+
+/* ==========================================================================
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 768px) {
@@ -959,7 +1115,7 @@ a:hover { text-decoration: underline; }
         top: 60px;
         left: 0;
         right: 0;
-        background: white;
+        background: var(--surface);
         border-bottom: 1px solid var(--gray-200);
         padding: 0.5rem;
         box-shadow: var(--shadow);

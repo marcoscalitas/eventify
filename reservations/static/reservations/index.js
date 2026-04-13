@@ -11,7 +11,26 @@ function debounce(fn, delay) {
     return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
 
+const SKELETON_COUNT = 6;
+
+function renderSkeletons() {
+    return Array.from({ length: SKELETON_COUNT }, () => `
+        <div class="skeleton">
+            <div class="skeleton__image"></div>
+            <div class="skeleton__body">
+                <div class="skeleton__line skeleton__line--title"></div>
+                <div class="skeleton__line skeleton__line--medium"></div>
+                <div class="skeleton__line skeleton__line--short"></div>
+                <div class="skeleton__line skeleton__line--full"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
 function loadEvents() {
+    const grid = document.getElementById('eventsGrid');
+    grid.innerHTML = renderSkeletons();
+
     const search = document.getElementById('searchInput').value;
     const category = document.getElementById('categoryFilter').value;
     const params = new URLSearchParams();
