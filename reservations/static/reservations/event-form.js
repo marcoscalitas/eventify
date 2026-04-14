@@ -5,18 +5,18 @@ new JustValidate('#eventForm', { errorLabelCssClass: ['field-error'], validateBe
     .addField('#description', [
         { rule: 'required', errorMessage: 'Description is required.' },
     ])
-    .addField('#date', [
-        { rule: 'required', errorMessage: 'Date is required.' },
+    .addField('#start_date', [
+        { rule: 'required', errorMessage: 'Start date is required.' },
         {
             validator: (value) => new Date(value) > new Date(),
             errorMessage: 'Date must be in the future.',
         },
     ])
-    .addField('#time', [
-        { rule: 'required', errorMessage: 'Time is required.' },
+    .addField('#start_time', [
+        { rule: 'required', errorMessage: 'Start time is required.' },
     ])
-    .addField('#location', [
-        { rule: 'required', errorMessage: 'Location is required.' },
+    .addField('#venue', [
+        { rule: 'required', errorMessage: 'Venue is required.' },
     ])
     .addField('#capacity', [
         { rule: 'required', errorMessage: 'Capacity is required.' },

@@ -54,8 +54,8 @@ function loadEvents() {
                     </div>
                     <div class="event-card__body">
                         <h3>${escapeHtml(event.title)}</h3>
-                        <p class="event-card__meta">📍 ${escapeHtml(event.location)}</p>
-                        <p class="event-card__meta">📅 ${escapeHtml(event.date)} at ${escapeHtml(event.time)}</p>
+                        <p class="event-card__meta">📍 ${escapeHtml(event.venue)}</p>
+                        <p class="event-card__meta">📅 ${escapeHtml(event.start_date)} at ${escapeHtml(event.start_time)}</p>
                         <p class="event-card__description">${escapeHtml(event.description)}</p>
                         <div class="event-card__footer">
                             <span class="event-card__spots ${event.spots_left === 0 ? 'event-card__spots--full' : ''}">

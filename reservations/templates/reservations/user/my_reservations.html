@@ -12,7 +12,7 @@
             <div class="events-list__item" id="res-{{ reservation.id }}">
                 <div class="events-list__info">
                     <h3><a href="{% url 'event_detail' reservation.event.id %}">{{ reservation.event.title }}</a></h3>
-                    <p>📅 {{ reservation.event.date }} at {{ reservation.event.time }} — 📍 {{ reservation.event.location }}</p>
+                    <p>📅 {{ reservation.event.start_date }} at {{ reservation.event.start_time }} — 📍 {{ reservation.event.venue }}</p>
                     <p class="events-list__status events-list__status--confirmed">✅ Confirmed — Booked {{ reservation.created_at|date:"M d, Y" }}</p>
                 </div>
                 <div class="events-list__actions">

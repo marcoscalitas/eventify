@@ -30,25 +30,49 @@
         </div>
         <div class="form-card__row">
             <div class="form-card__group">
-                <label for="date">Date</label>
-                <input type="date" id="date" name="date"
-                    value="{% if editing %}{{ event.date|date:'Y-m-d' }}{% endif %}">
+                <label for="start_date">Start Date</label>
+                <input type="date" id="start_date" name="start_date"
+                    value="{% if editing %}{{ event.start_date|date:'Y-m-d' }}{% endif %}">
             </div>
             <div class="form-card__group">
-                <label for="time">Time</label>
-                <input type="time" id="time" name="time"
-                    value="{% if editing %}{{ event.time|time:'H:i' }}{% endif %}">
+                <label for="start_time">Start Time</label>
+                <input type="time" id="start_time" name="start_time"
+                    value="{% if editing %}{{ event.start_time|time:'H:i' }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-card__row">
+            <div class="form-card__group">
+                <label for="end_date">End Date (optional)</label>
+                <input type="date" id="end_date" name="end_date"
+                    value="{% if editing and event.end_date %}{{ event.end_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="form-card__group">
+                <label for="end_time">End Time (optional)</label>
+                <input type="time" id="end_time" name="end_time"
+                    value="{% if editing and event.end_time %}{{ event.end_time|time:'H:i' }}{% endif %}">
             </div>
         </div>
         <div class="form-card__group">
-            <label for="location">Location</label>
-            <input type="text" id="location" name="location"
-                value="{% if editing %}{{ event.location }}{% endif %}">
+            <label for="venue">Venue</label>
+            <input type="text" id="venue" name="venue"
+                value="{% if editing %}{{ event.venue }}{% endif %}">
         </div>
         <div class="form-card__group">
-            <label for="capacity">Capacity</label>
-            <input type="number" id="capacity" name="capacity" min="1"
-                value="{% if editing %}{{ event.capacity }}{% endif %}">
+            <label for="address">Address (optional)</label>
+            <input type="text" id="address" name="address"
+                value="{% if editing %}{{ event.address }}{% endif %}">
+        </div>
+        <div class="form-card__row">
+            <div class="form-card__group">
+                <label for="capacity">Capacity</label>
+                <input type="number" id="capacity" name="capacity" min="1"
+                    value="{% if editing %}{{ event.capacity }}{% endif %}">
+            </div>
+            <div class="form-card__group">
+                <label for="price">Price (0 = free)</label>
+                <input type="number" id="price" name="price" min="0" step="0.01"
+                    value="{% if editing %}{{ event.price }}{% else %}0{% endif %}">
+            </div>
         </div>
         <div class="form-card__group">
             <label for="image">Event Image (optional)</label>

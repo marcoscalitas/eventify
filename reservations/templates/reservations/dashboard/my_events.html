@@ -14,7 +14,7 @@
             <div class="events-list__item">
                 <div class="events-list__info">
                     <h3><a href="{% url 'event_detail' item.event.id %}">{{ item.event.title }}</a></h3>
-                    <p>📅 {{ item.event.date }} at {{ item.event.time }} — 📍 {{ item.event.location }}</p>
+                    <p>📅 {{ item.event.start_date }} at {{ item.event.start_time }} — 📍 {{ item.event.venue }}</p>
                     <div class="stats">
                         <span>👥 {{ item.confirmed }} / {{ item.event.capacity }} reserved</span>
                         <span>📊 {{ item.occupancy }}% occupancy</span>
