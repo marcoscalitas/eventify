@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ..models import UserProfile
+from ..models import Favorite, Reservation, UserProfile
 from ..forms import ProfileForm
 
 
@@ -51,4 +51,24 @@ def profile_public(request, username):
         "profile_user": user,
         "user_profile": user_profile,
         "events": events,
+    })
+
+
+@login_required
+def my_reservations(request):
+    reservations = Reservation.objects.filter(
+        user=request.user, status=Reservation.CONFIRMED
+    ).select_related("event").order_by("event__date")
+    return render(request, "reservations/user/my_reservations.html", {
+        "reservations": reservations,
+    })
+
+
+@login_required
+def my_favorites(request):
+    favorites = Favorite.objects.filter(
+        user=request.user
+    ).select_related("event").order_by("-created_at")
+    return render(request, "reservations/user/my_favorites.html", {
+        "favorites": favorites,
     })
