@@ -8,7 +8,7 @@ from ..decorators import role_required
 
 @role_required("organizer")
 def my_events(request):
-    events = Event.objects.filter(organizer=request.user).order_by("-date")
+    events = Event.objects.filter(organizer=request.user).order_by("-start_date")
     event_stats = []
     for event in events:
         confirmed = event.reservations.filter(status="confirmed").count()

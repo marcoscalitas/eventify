@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils import timezone
+
 from .models import UserProfile, Category, Event, Reservation, Review, Favorite, Notification
 
 
@@ -20,17 +22,18 @@ class SoftDeleteAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(SoftDeleteAdmin):
-    list_display = ("user", "bio", "is_deleted")
-    list_filter = ("deleted_at",)
+    list_display = ("user", "gender", "phone", "location", "is_deleted")
+    list_filter = ("gender", "deleted_at")
     search_fields = ("user__username",)
     actions = ["restore_selected"]
 
 
 @admin.register(Category)
 class CategoryAdmin(SoftDeleteAdmin):
-    list_display = ("name", "is_deleted")
+    list_display = ("name", "slug", "is_deleted")
     list_filter = ("deleted_at",)
     search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
     actions = ["restore_selected"]
 
 
@@ -43,21 +46,21 @@ class ReservationInline(admin.TabularInline):
 
 @admin.register(Event)
 class EventAdmin(SoftDeleteAdmin):
-    list_display = ("title", "organizer", "category", "date", "time", "capacity", "is_active", "is_deleted")
-    list_filter = ("is_active", "category", "date", "deleted_at")
+    list_display = ("title", "organizer", "category", "start_date", "start_time", "capacity", "price", "status", "is_deleted")
+    list_filter = ("status", "category", "start_date", "deleted_at")
     search_fields = ("title", "description", "organizer__username")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("slug", "created_at", "updated_at")
     autocomplete_fields = ("organizer", "category")
     inlines = [ReservationInline]
-    actions = ["deactivate_events", "activate_events", "restore_selected"]
+    actions = ["publish_events", "cancel_events", "restore_selected"]
 
-    @admin.action(description="Deactivate selected events")
-    def deactivate_events(self, request, queryset):
-        queryset.update(is_active=False)
+    @admin.action(description="Publish selected events")
+    def publish_events(self, request, queryset):
+        queryset.update(status=Event.PUBLISHED, published_at=timezone.now())
 
-    @admin.action(description="Activate selected events")
-    def activate_events(self, request, queryset):
-        queryset.update(is_active=True)
+    @admin.action(description="Cancel selected events")
+    def cancel_events(self, request, queryset):
+        queryset.update(status=Event.CANCELLED)
 
 
 @admin.register(Reservation)
@@ -94,11 +97,11 @@ class FavoriteAdmin(SoftDeleteAdmin):
 @admin.register(Notification)
 class NotificationAdmin(SoftDeleteAdmin):
     list_display = ("recipient", "notification_type", "title", "is_read", "created_at", "is_deleted")
-    list_filter = ("notification_type", "is_read", "deleted_at")
-    search_fields = ("title", "message", "recipient__username")
-    readonly_fields = ("created_at",)
+    list_filter = ("notification_type", "deleted_at")
+    search_fields = ("recipient__username", "title")
+    readonly_fields = ("created_at", "read_at")
     actions = ["mark_as_read", "restore_selected"]
 
     @admin.action(description="Mark selected as read")
     def mark_as_read(self, request, queryset):
-        queryset.update(is_read=True)
+        queryset.filter(read_at__isnull=True).update(read_at=timezone.now())

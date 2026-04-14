@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ..models import Favorite, Reservation, UserProfile
+from ..models import Event, Favorite, Reservation, UserProfile
 from ..forms import ProfileForm
 
 
@@ -16,6 +16,10 @@ def profile(request):
             "last_name": request.user.last_name,
             "email": request.user.email,
             "bio": user_profile.bio,
+            "gender": user_profile.gender,
+            "phone": user_profile.phone,
+            "location": user_profile.location,
+            "website": user_profile.website,
         })
         return render(request, "reservations/user/profile.html", {
             "user_profile": user_profile,
@@ -30,6 +34,10 @@ def profile(request):
         })
 
     user_profile.bio = form.cleaned_data["bio"]
+    user_profile.gender = form.cleaned_data["gender"]
+    user_profile.phone = form.cleaned_data["phone"]
+    user_profile.location = form.cleaned_data["location"]
+    user_profile.website = form.cleaned_data["website"]
     if form.cleaned_data["avatar"]:
         user_profile.avatar = form.cleaned_data["avatar"]
     user_profile.save()
@@ -45,7 +53,7 @@ def profile(request):
 def profile_public(request, username):
     user = get_object_or_404(User, username=username)
     user_profile, _ = UserProfile.objects.get_or_create(user=user)
-    events = user.organized_events.filter(is_active=True).order_by("-date")
+    events = user.organized_events.filter(status=Event.PUBLISHED).order_by("-start_date")
 
     return render(request, "reservations/user/profile_public.html", {
         "profile_user": user,
@@ -58,7 +66,7 @@ def profile_public(request, username):
 def my_reservations(request):
     reservations = Reservation.objects.filter(
         user=request.user, status=Reservation.CONFIRMED
-    ).select_related("event").order_by("event__date")
+    ).select_related("event").order_by("event__start_date")
     return render(request, "reservations/user/my_reservations.html", {
         "reservations": reservations,
     })

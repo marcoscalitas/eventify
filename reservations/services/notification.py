@@ -41,7 +41,7 @@ def notify_reservation_confirmed(user, event):
         recipient=user,
         notification_type="reservation_confirmed",
         title=f"Reservation confirmed: {event.title}",
-        message=f"Your spot at \"{event.title}\" on {event.date} at {event.time} has been confirmed. {event.spots_left()} spots remaining.",
+        message=f"Your spot at \"{event.title}\" on {event.start_date} at {event.start_time} has been confirmed. {event.spots_left()} spots remaining.",
         link=event_url,
     )
     notify(

@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -32,7 +33,7 @@ class EventListAPIView(APIView):
         search = request.query_params.get("search", "")
         page = int(request.query_params.get("page", 1))
 
-        events = Event.objects.filter(is_active=True).select_related("category", "organizer")
+        events = Event.objects.filter(status=Event.PUBLISHED).select_related("category", "organizer")
 
         if category:
             events = events.filter(category__name=category)
@@ -59,7 +60,7 @@ class ReserveAPIView(APIView):
 
     @staticmethod
     def post(request, event_id):
-        event = get_object_or_404(Event, pk=event_id, is_active=True)
+        event = get_object_or_404(Event, pk=event_id, status=Event.PUBLISHED)
 
         reservation, error = reserve(request.user, event)
         if error:
@@ -136,7 +137,7 @@ class NotificationListAPIView(APIView):
     @staticmethod
     def get(request):
         unread_count = Notification.objects.filter(
-            recipient=request.user, is_read=False
+            recipient=request.user, read_at__isnull=True
         ).count()
         latest = Notification.objects.filter(recipient=request.user)[:10]
         serializer = NotificationSerializer(latest, many=True)
@@ -153,8 +154,8 @@ class MarkReadAPIView(APIView):
     @staticmethod
     def post(request):
         Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).update(is_read=True)
+            recipient=request.user, read_at__isnull=True
+        ).update(read_at=timezone.now())
         return Response({"message": "All notifications marked as read."})
 
 
