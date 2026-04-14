@@ -13,7 +13,6 @@ class Review(SoftDeleteModel):
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     comment = models.TextField(blank=True, default="")
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [

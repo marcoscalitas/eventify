@@ -17,12 +17,15 @@ class Notification(SoftDeleteModel):
     notification_type = models.CharField(max_length=30, choices=TYPES)
     title = models.CharField(max_length=200)
     message = models.TextField()
-    link = models.CharField(max_length=200, blank=True, default="")
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    link = models.URLField(max_length=200, blank=True, default="")
+    read_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def is_read(self):
+        return self.read_at is not None
 
     def __str__(self):
         return f"{self.recipient.username}: {self.title}"

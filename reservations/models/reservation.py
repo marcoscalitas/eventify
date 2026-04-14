@@ -15,8 +15,7 @@ class Reservation(SoftDeleteModel):
 
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="reservations")
     event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="reservations")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=CONFIRMED)
-    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=CONFIRMED, db_index=True)
 
     class Meta:
         constraints = [

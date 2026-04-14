@@ -8,7 +8,6 @@ from .event import Event
 class Favorite(SoftDeleteModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="favorites")
     event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="favorites")
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
