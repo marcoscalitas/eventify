@@ -28,10 +28,9 @@ class Reservation(SoftDeleteModel):
         ]
 
     def cancel(self):
+        from ..services.notification import notify_reservation_cancelled
         self.status = self.CANCELLED
         self.save()
-
-        from ..helpers import notify_reservation_cancelled
         notify_reservation_cancelled(self.user, self.event)
 
     def __str__(self):
