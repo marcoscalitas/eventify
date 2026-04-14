@@ -36,10 +36,11 @@ class FormTests(TestCase):
             "title": "Test",
             "description": "Desc",
             "category": category.id,
-            "location": "Lisbon",
-            "date": date.today() + timedelta(days=7),
-            "time": "20:00",
+            "venue": "Lisbon",
+            "start_date": date.today() + timedelta(days=7),
+            "start_time": "20:00",
             "capacity": 0,
+            "price": "0",
         })
         self.assertFalse(form.is_valid())
 
@@ -178,10 +179,11 @@ class BruteFormValidationTests(TestCase):
             "title": "My Event",
             "description": "A description",
             "category": self._cat.id,
-            "location": "Lisbon",
-            "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00",
+            "venue": "Lisbon",
+            "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00",
             "capacity": 10,
+            "price": "0",
         }
         data.update(overrides)
         return data
@@ -214,45 +216,45 @@ class BruteFormValidationTests(TestCase):
 
     def test_event_empty_location(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(location=""))
+        form = EventForm(data=self._event_data(venue=""))
         self.assertFalse(form.is_valid())
 
     def test_event_location_max_length(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(location="x" * 256))
+        form = EventForm(data=self._event_data(venue="x" * 256))
         self.assertFalse(form.is_valid())
 
     def test_event_date_in_past(self):
         from ..forms import EventForm
         form = EventForm(data=self._event_data(
-            date=(date.today() - timedelta(days=1)).isoformat()
+            start_date=(date.today() - timedelta(days=1)).isoformat()
         ))
         self.assertFalse(form.is_valid())
-        self.assertIn("date", form.errors)
+        self.assertIn("start_date", form.errors)
 
     def test_event_date_today(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(date=date.today().isoformat()))
+        form = EventForm(data=self._event_data(start_date=date.today().isoformat()))
         self.assertTrue(form.is_valid())
 
     def test_event_date_far_past(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(date="2020-01-01"))
+        form = EventForm(data=self._event_data(start_date="2020-01-01"))
         self.assertFalse(form.is_valid())
 
     def test_event_empty_date(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(date=""))
+        form = EventForm(data=self._event_data(start_date=""))
         self.assertFalse(form.is_valid())
 
     def test_event_invalid_date_format(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(date="not-a-date"))
+        form = EventForm(data=self._event_data(start_date="not-a-date"))
         self.assertFalse(form.is_valid())
 
     def test_event_empty_time(self):
         from ..forms import EventForm
-        form = EventForm(data=self._event_data(time=""))
+        form = EventForm(data=self._event_data(start_time=""))
         self.assertFalse(form.is_valid())
 
     def test_event_capacity_zero(self):
@@ -264,6 +266,14 @@ class BruteFormValidationTests(TestCase):
     def test_event_capacity_negative(self):
         from ..forms import EventForm
         form = EventForm(data=self._event_data(capacity=-5))
+        self.assertFalse(form.is_valid())
+
+    def test_event_end_date_before_start_date(self):
+        from ..forms import EventForm
+        form = EventForm(data=self._event_data(
+            start_date=(date.today() + timedelta(days=7)).isoformat(),
+            end_date=(date.today() + timedelta(days=5)).isoformat(),
+        ))
         self.assertFalse(form.is_valid())
 
     def test_event_capacity_one(self):

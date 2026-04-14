@@ -40,8 +40,8 @@ class CancelReservationServiceTests(TestCase):
         self.att = User.objects.create_user("att", "a@t.com", "Test@1234")
         self.event = Event.objects.create(
             title="E", description="D", organizer=self.org,
-            location="L", date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            venue="L", start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
     def test_cancel_reservation_standalone(self):
@@ -64,9 +64,9 @@ class ModelStrTests(TestCase):
         self.cat = Category.objects.create(name="Music")
         self.event = Event.objects.create(
             title="Concert", description="D", category=self.cat,
-            organizer=self.org, location="L",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            organizer=self.org, venue="L",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
     def test_event_str(self):
@@ -123,9 +123,9 @@ class AdminTests(TestCase):
         self.cat = Category.objects.create(name="Music")
         self.event = Event.objects.create(
             title="E", description="D", category=self.cat,
-            organizer=self.org, location="L",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            organizer=self.org, venue="L",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
     def test_get_queryset_includes_soft_deleted(self):
@@ -152,23 +152,23 @@ class AdminTests(TestCase):
         self.event.refresh_from_db()
         self.assertIsNone(self.event.deleted_at)
 
-    def test_deactivate_events(self):
+    def test_cancel_events(self):
         admin = EventAdmin(Event, self.site)
         request = self.factory.post("/admin/")
         request.user = self.admin_user
-        admin.deactivate_events(request, Event.objects.filter(pk=self.event.pk))
+        admin.cancel_events(request, Event.objects.filter(pk=self.event.pk))
         self.event.refresh_from_db()
-        self.assertFalse(self.event.is_active)
+        self.assertEqual(self.event.status, Event.CANCELLED)
 
-    def test_activate_events(self):
+    def test_publish_events(self):
         admin = EventAdmin(Event, self.site)
-        self.event.is_active = False
+        self.event.status = Event.CANCELLED
         self.event.save()
         request = self.factory.post("/admin/")
         request.user = self.admin_user
-        admin.activate_events(request, Event.all_objects.filter(pk=self.event.pk))
+        admin.publish_events(request, Event.all_objects.filter(pk=self.event.pk))
         self.event.refresh_from_db()
-        self.assertTrue(self.event.is_active)
+        self.assertEqual(self.event.status, Event.PUBLISHED)
 
     def test_cancel_reservations_action(self):
         att = User.objects.create_user("att", "a2@t.com", "Test@1234")
@@ -199,8 +199,8 @@ class EventSerializerImageTests(TestCase):
         self.org = User.objects.create_user("org", "o@t.com", "Test@1234")
         self.event = Event.objects.create(
             title="E", description="D" * 200, organizer=self.org,
-            location="L", date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            venue="L", start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
     def test_no_image_returns_empty_string(self):
@@ -298,8 +298,8 @@ class EditEventInvalidFormTests(TestCase):
         UserProfile.objects.create(user=self.org)
         self.event = Event.objects.create(
             title="E", description="D", organizer=self.org,
-            location="L", date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            venue="L", start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
     def test_edit_event_get_renders_form(self):
@@ -310,8 +310,8 @@ class EditEventInvalidFormTests(TestCase):
     def test_edit_event_invalid_form_rerenders(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("edit_event", args=[self.event.id]), {
-            "title": "", "description": "", "location": "",
-            "date": "", "time": "", "capacity": 0,
+            "title": "", "description": "", "venue": "",
+            "start_date": "", "start_time": "", "capacity": 0, "price": "0",
         })
         self.assertEqual(r.status_code, 200)
         self.event.refresh_from_db()
@@ -329,8 +329,8 @@ class NotifyEventUpdatedTests(TestCase):
         UserProfile.objects.create(user=att)
         event = Event.objects.create(
             title="E", description="D", organizer=org,
-            location="L", date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            venue="L", start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
         reserve(att, event)
         Notification.objects.all().delete()
@@ -338,8 +338,8 @@ class NotifyEventUpdatedTests(TestCase):
         self.client.login(username="org", password="Test@1234")
         self.client.post(reverse("edit_event", args=[event.id]), {
             "title": "Updated", "description": "New desc",
-            "location": "L", "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": 10,
+            "venue": "L", "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00", "capacity": 10, "price": "0",
         })
         self.assertTrue(
             Notification.objects.filter(

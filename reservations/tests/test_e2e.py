@@ -4,6 +4,7 @@ from datetime import date, time, timedelta
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rolepermissions.roles import assign_role
 
 from ..models import Category, Event, Notification, Reservation, UserProfile
@@ -38,10 +39,11 @@ class EndToEndOrganizerTests(TestCase):
             "title": "Django Workshop",
             "description": "Learn Django end to end",
             "category": cat.id,
-            "location": "Porto",
-            "date": future.isoformat(),
-            "time": "10:00",
+            "venue": "Porto",
+            "start_date": future.isoformat(),
+            "start_time": "10:00",
             "capacity": 30,
+            "price": "0",
         })
         self.assertEqual(response.status_code, 302)
         event = Event.objects.get(title="Django Workshop")
@@ -53,10 +55,11 @@ class EndToEndOrganizerTests(TestCase):
             "title": "Django Workshop v2",
             "description": "Updated description",
             "category": cat.id,
-            "location": "Porto",
-            "date": future.isoformat(),
-            "time": "10:00",
+            "venue": "Porto",
+            "start_date": future.isoformat(),
+            "start_time": "10:00",
             "capacity": 50,
+            "price": "0",
         })
         self.assertEqual(response.status_code, 302)
         event.refresh_from_db()
@@ -108,9 +111,9 @@ class EndToEndOrganizerTests(TestCase):
         UserProfile.objects.create(user=org_b)
         event = Event.objects.create(
             title="B's Event", description="Owned by B",
-            organizer=org_b, location="Lisbon",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            organizer=org_b, venue="Lisbon",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
 
         # Organizer A tries to access B's attendees/CSV
@@ -136,9 +139,9 @@ class EndToEndAttendeeTests(TestCase):
             description="Live jazz",
             category=self.category,
             organizer=self.organizer,
-            location="Lisbon",
-            date=date.today() + timedelta(days=10),
-            time=time(21, 0),
+            venue="Lisbon",
+            start_date=date.today() + timedelta(days=10),
+            start_time=time(21, 0),
             capacity=3,
         )
 
@@ -225,7 +228,7 @@ class EndToEndAttendeeTests(TestCase):
         # 14. Mark notifications as read
         response = c.post(reverse("api_mark_read"))
         self.assertEqual(response.status_code, 200)
-        notifs = Notification.objects.filter(recipient=user, is_read=False)
+        notifs = Notification.objects.filter(recipient=user, read_at__isnull=True)
         self.assertEqual(notifs.count(), 0)
 
         # 15. View public organizer profile
@@ -259,9 +262,9 @@ class EndToEndCapacityTests(TestCase):
             title="Small Workshop",
             description="Only 2 spots",
             organizer=self.org,
-            location="Faro",
-            date=date.today() + timedelta(days=5),
-            time=time(14, 0),
+            venue="Faro",
+            start_date=date.today() + timedelta(days=5),
+            start_time=time(14, 0),
             capacity=2,
         )
 
@@ -340,9 +343,9 @@ class EndToEndNotificationFlowTests(TestCase):
             title="Notification Test Event",
             description="Testing notifs",
             organizer=self.org,
-            location="Braga",
-            date=date.today() + timedelta(days=5),
-            time=time(18, 0),
+            venue="Braga",
+            start_date=date.today() + timedelta(days=5),
+            start_time=time(18, 0),
             capacity=10,
         )
         self.c_att = Client()
@@ -356,23 +359,23 @@ class EndToEndNotificationFlowTests(TestCase):
 
         # Attendee gets notification
         self.assertTrue(
-            Notification.objects.filter(recipient=self.att, is_read=False).exists()
+            Notification.objects.filter(recipient=self.att, read_at__isnull=True).exists()
         )
 
         # Organizer gets notification
         self.assertTrue(
-            Notification.objects.filter(recipient=self.org, is_read=False).exists()
+            Notification.objects.filter(recipient=self.org, read_at__isnull=True).exists()
         )
 
     def test_cancel_notifies_both_parties(self):
         self.c_att.post(reverse("api_reserve", args=[self.event.id]))
         # Clear existing
-        Notification.objects.all().update(is_read=True)
+        Notification.objects.all().update(read_at=timezone.now())
 
         self.c_att.post(reverse("api_cancel", args=[self.event.id]))
 
-        att_notifs = Notification.objects.filter(recipient=self.att, is_read=False)
-        org_notifs = Notification.objects.filter(recipient=self.org, is_read=False)
+        att_notifs = Notification.objects.filter(recipient=self.att, read_at__isnull=True)
+        org_notifs = Notification.objects.filter(recipient=self.org, read_at__isnull=True)
         self.assertTrue(att_notifs.exists())
         self.assertTrue(org_notifs.exists())
 
@@ -456,9 +459,9 @@ class EndToEndSearchAndFilterTests(TestCase):
                 description=f"Description {i}",
                 category=cat1 if i < 10 else cat2,
                 organizer=org,
-                location="Lisbon",
-                date=base_date + timedelta(days=i),
-                time=time(10, 0),
+                venue="Lisbon",
+                start_date=base_date + timedelta(days=i),
+                start_time=time(10, 0),
                 capacity=50,
             )
 

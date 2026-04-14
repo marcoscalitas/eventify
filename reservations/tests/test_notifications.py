@@ -15,9 +15,9 @@ class NotificationTests(TestCase):
             title="Concert",
             description="A great concert",
             organizer=self.organizer,
-            location="Lisbon",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0),
+            venue="Lisbon",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0),
             capacity=10,
         )
 

@@ -19,9 +19,9 @@ class EventModelTests(TestCase):
             description="A great concert",
             category=self.category,
             organizer=self.organizer,
-            location="Lisbon",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0),
+            venue="Lisbon",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0),
             capacity=2,
         )
 
@@ -29,6 +29,24 @@ class EventModelTests(TestCase):
         self.assertEqual(self.event.spots_left(), 2)
         Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
         self.assertEqual(self.event.spots_left(), 1)
+
+    def test_slug_auto_generated(self):
+        self.assertEqual(self.event.slug, "concert")
+
+    def test_slug_collision_increments(self):
+        event2 = Event.objects.create(
+            title="Concert", description="D2",
+            organizer=self.organizer, venue="Porto",
+            start_date=date.today() + timedelta(days=14),
+            start_time=time(21, 0), capacity=5,
+        )
+        self.assertEqual(event2.slug, "concert-1")
+
+    def test_is_free_property(self):
+        self.assertTrue(self.event.is_free)
+        self.event.price = 10
+        self.event.save()
+        self.assertFalse(self.event.is_free)
 
     def test_average_rating_none(self):
         self.assertIsNone(self.event.average_rating())
@@ -93,9 +111,9 @@ class ReservationModelTests(TestCase):
             title="Concert",
             description="A great concert",
             organizer=self.organizer,
-            location="Lisbon",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0),
+            venue="Lisbon",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0),
             capacity=10,
         )
 

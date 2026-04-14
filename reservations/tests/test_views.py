@@ -71,9 +71,9 @@ class BruteViewValidationTests(TestCase):
     def test_create_event_past_date_rejected(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "Past", "description": "desc", "location": "Here",
-            "date": (date.today() - timedelta(days=30)).isoformat(),
-            "time": "20:00", "capacity": 10,
+            "title": "Past", "description": "desc", "venue": "Here",
+            "start_date": (date.today() - timedelta(days=30)).isoformat(),
+            "start_time": "20:00", "capacity": 10, "price": "0",
         })
         self.assertEqual(r.status_code, 200)  # re-render form
         self.assertFalse(Event.objects.filter(title="Past").exists())
@@ -81,9 +81,9 @@ class BruteViewValidationTests(TestCase):
     def test_create_event_zero_capacity_rejected(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "Zero", "description": "desc", "location": "Here",
-            "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": 0,
+            "title": "Zero", "description": "desc", "venue": "Here",
+            "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00", "capacity": 0, "price": "0",
         })
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Event.objects.filter(title="Zero").exists())
@@ -91,9 +91,9 @@ class BruteViewValidationTests(TestCase):
     def test_create_event_negative_capacity_rejected(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "Neg", "description": "desc", "location": "Here",
-            "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": -1,
+            "title": "Neg", "description": "desc", "venue": "Here",
+            "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00", "capacity": -1, "price": "0",
         })
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Event.objects.filter(title="Neg").exists())
@@ -101,9 +101,9 @@ class BruteViewValidationTests(TestCase):
     def test_create_event_empty_title_rejected(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "", "description": "desc", "location": "Here",
-            "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": 10,
+            "title": "", "description": "desc", "venue": "Here",
+            "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00", "capacity": 10, "price": "0",
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Event.objects.count(), 0)
@@ -111,9 +111,9 @@ class BruteViewValidationTests(TestCase):
     def test_create_event_without_image_ok(self):
         self.client.login(username="org", password="Test@1234")
         r = self.client.post(reverse("create_event"), {
-            "title": "NoImg", "description": "desc", "location": "Here",
-            "date": (date.today() + timedelta(days=7)).isoformat(),
-            "time": "20:00", "capacity": 10,
+            "title": "NoImg", "description": "desc", "venue": "Here",
+            "start_date": (date.today() + timedelta(days=7)).isoformat(),
+            "start_time": "20:00", "capacity": 10, "price": "0",
         })
         self.assertEqual(r.status_code, 302)
         self.assertTrue(Event.objects.filter(title="NoImg").exists())
@@ -155,9 +155,9 @@ class BruteViewValidationTests(TestCase):
     def _make_event_and_reserve(self):
         event = Event.objects.create(
             title="Ev", description="D", category=self.category,
-            organizer=self.organizer, location="L",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0), capacity=10,
+            organizer=self.organizer, venue="L",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0), capacity=10,
         )
         reserve(self.attendee, event)
         return event
@@ -258,9 +258,9 @@ class PageViewTests(TestCase):
             title="Concert",
             description="A great concert",
             organizer=self.organizer,
-            location="Lisbon",
-            date=date.today() + timedelta(days=7),
-            time=time(20, 0),
+            venue="Lisbon",
+            start_date=date.today() + timedelta(days=7),
+            start_time=time(20, 0),
             capacity=5,
         )
 
