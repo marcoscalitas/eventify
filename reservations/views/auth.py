@@ -13,18 +13,31 @@ def _is_ajax(request):
     return request.headers.get('Accept') == 'application/json'
 
 
+def _error_response(request, ajax, template, message):
+    if ajax:
+        return JsonResponse({"error": message}, status=400)
+    return render(request, template, {"message": message})
+
+
+def _success_response(ajax):
+    if ajax:
+        return JsonResponse({"redirect": "/"})
+    return redirect("index")
+
+
+_LOGIN_TEMPLATE = "reservations/auth/login.html"
+_REGISTER_TEMPLATE = "reservations/auth/register.html"
+
+
 def login_view(request):
     if request.method != "POST":
-        return render(request, "reservations/auth/login.html")
+        return render(request, _LOGIN_TEMPLATE)
 
     form = LoginForm(request.POST)
     ajax = _is_ajax(request)
 
     if not form.is_valid():
-        msg = "Please fill in all fields correctly."
-        if ajax:
-            return JsonResponse({"error": msg}, status=400)
-        return render(request, "reservations/auth/login.html", {"message": msg})
+        return _error_response(request, ajax, _LOGIN_TEMPLATE, "Please fill in all fields correctly.")
 
     user = authenticate(
         request,
@@ -32,15 +45,10 @@ def login_view(request):
         password=form.cleaned_data["password"],
     )
     if not user:
-        msg = "Invalid email and/or password."
-        if ajax:
-            return JsonResponse({"error": msg}, status=400)
-        return render(request, "reservations/auth/login.html", {"message": msg})
+        return _error_response(request, ajax, _LOGIN_TEMPLATE, "Invalid email and/or password.")
 
     login(request, user)
-    if ajax:
-        return JsonResponse({"redirect": "/"})
-    return redirect("index")
+    return _success_response(ajax)
 
 
 def logout_view(request):
@@ -50,18 +58,14 @@ def logout_view(request):
 
 def register(request):
     if request.method != "POST":
-        return render(request, "reservations/auth/register.html")
+        return render(request, _REGISTER_TEMPLATE)
 
     form = RegisterForm(request.POST)
     ajax = _is_ajax(request)
 
     if not form.is_valid():
         first_error = next(iter(form.errors.values()))[0]
-        if ajax:
-            return JsonResponse({"error": first_error}, status=400)
-        return render(request, "reservations/auth/register.html", {
-            "message": first_error,
-        })
+        return _error_response(request, ajax, _REGISTER_TEMPLATE, first_error)
 
     try:
         user = User.objects.create_user(
@@ -70,17 +74,10 @@ def register(request):
             form.cleaned_data["password"],
         )
     except IntegrityError:
-        msg = "Username already taken."
-        if ajax:
-            return JsonResponse({"error": msg}, status=400)
-        return render(request, "reservations/auth/register.html", {
-            "message": msg,
-        })
+        return _error_response(request, ajax, _REGISTER_TEMPLATE, "Username already taken.")
 
     UserProfile.objects.create(user=user)
     assign_role(user, form.cleaned_data["role"])
 
     login(request, user)
-    if ajax:
-        return JsonResponse({"redirect": "/"})
-    return redirect("index")
+    return _success_response(ajax)
