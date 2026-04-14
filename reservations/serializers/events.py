@@ -10,14 +10,17 @@ class EventSerializer(serializers.ModelSerializer):
     organizer = serializers.SlugRelatedField(slug_field="username", read_only=True)
     spots_left = serializers.IntegerField(read_only=True)
     average_rating = serializers.FloatField(read_only=True)
-    time = serializers.TimeField(format="%H:%M")
+    start_time = serializers.TimeField(format="%H:%M")
+    end_time = serializers.TimeField(format="%H:%M", allow_null=True)
+    is_free = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Event
         fields = [
-            "id", "title", "description", "category", "location",
-            "date", "time", "capacity", "spots_left", "image",
-            "organizer", "average_rating",
+            "id", "title", "slug", "description", "category", "venue", "address",
+            "start_date", "start_time", "end_date", "end_time",
+            "capacity", "spots_left", "price", "is_free", "image",
+            "organizer", "average_rating", "status",
         ]
 
     def to_representation(self, instance):
