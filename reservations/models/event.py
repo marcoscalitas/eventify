@@ -1,12 +1,14 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.text import slugify
 
-from .base import SoftDeleteModel
+from .base import SoftDeleteManager, AllObjectsManager
 from .category import Category
 
 
-class Event(SoftDeleteModel):
+class Event(models.Model):
     DRAFT = "draft"
     PUBLISHED = "published"
     CANCELLED = "cancelled"
@@ -36,6 +38,24 @@ class Event(SoftDeleteModel):
     image = models.ImageField(upload_to="events/", blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PUBLISHED, db_index=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, default=None, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="event_created",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="event_updated",
+    )
+
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
 
     class Meta:
         ordering = ["start_date", "start_time"]
@@ -65,6 +85,17 @@ class Event(SoftDeleteModel):
         if not reviews.exists():
             return None
         return round(reviews.aggregate(models.Avg("rating"))["rating__avg"], 1)
+
+    def delete(self, using=None, keep_parents=False):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["deleted_at"])
+
+    def hard_delete(self, using=None, keep_parents=False):
+        super().delete(using=using, keep_parents=keep_parents)
+
+    def restore(self):
+        self.deleted_at = None
+        self.save(update_fields=["deleted_at"])
 
     def __str__(self):
         return f"{self.title} ({self.start_date})"
