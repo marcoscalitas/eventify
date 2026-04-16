@@ -1,12 +1,14 @@
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ..models import Category, Event, Favorite, Reservation, Review
 from ..services.booking import reserve
 from ..services.review import add_review
 from ..services.favorite import toggle_favorite
+
+User = get_user_model()
 
 
 class EventModelTests(TestCase):

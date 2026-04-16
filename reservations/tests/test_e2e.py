@@ -1,14 +1,16 @@
 import json
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rolepermissions.roles import assign_role
 
-from ..models import Category, Event, Notification, Reservation, UserProfile
+from ..models import Category, Event, Notification, Reservation
 from ..services.booking import reserve
+
+User = get_user_model()
 
 
 @override_settings(RATELIMIT_ENABLE=False)
@@ -28,7 +30,6 @@ class EndToEndOrganizerTests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         user = User.objects.get(username="org_e2e")
-        self.assertTrue(UserProfile.objects.filter(user=user).exists())
 
         # 2. Create a category (needed for event)
         cat = Category.objects.create(name="Tech")
@@ -79,7 +80,6 @@ class EndToEndOrganizerTests(TestCase):
         # 7. Create an attendee who reserves
         att = User.objects.create_user("att_e2e", "att@test.com", "Test@1234")
         assign_role(att, "attendee")
-        UserProfile.objects.create(user=att)
         reservation, err = reserve(att, event)
         self.assertIsNone(err)
 
@@ -103,12 +103,10 @@ class EndToEndOrganizerTests(TestCase):
         # Organizer A
         org_a = User.objects.create_user("org_a", "a@test.com", "Test@1234")
         assign_role(org_a, "organizer")
-        UserProfile.objects.create(user=org_a)
 
         # Organizer B creates event
         org_b = User.objects.create_user("org_b", "b@test.com", "Test@1234")
         assign_role(org_b, "organizer")
-        UserProfile.objects.create(user=org_b)
         event = Event.objects.create(
             title="B's Event", description="Owned by B",
             organizer=org_b, venue="Lisbon",
@@ -132,7 +130,6 @@ class EndToEndAttendeeTests(TestCase):
     def setUp(self):
         self.organizer = User.objects.create_user("org", "org@test.com", "Test@1234")
         assign_role(self.organizer, "organizer")
-        UserProfile.objects.create(user=self.organizer)
         self.category = Category.objects.create(name="Music")
         self.event = Event.objects.create(
             title="Jazz Night",
@@ -240,7 +237,6 @@ class EndToEndAttendeeTests(TestCase):
         c = Client()
         att = User.objects.create_user("att_rbac", "rbac@test.com", "Test@1234")
         assign_role(att, "attendee")
-        UserProfile.objects.create(user=att)
         c.login(username="att_rbac", password="Test@1234")
 
         # All organizer-only pages should return 403
@@ -257,7 +253,6 @@ class EndToEndCapacityTests(TestCase):
     def setUp(self):
         self.org = User.objects.create_user("org", "org@test.com", "Test@1234")
         assign_role(self.org, "organizer")
-        UserProfile.objects.create(user=self.org)
         self.event = Event.objects.create(
             title="Small Workshop",
             description="Only 2 spots",
@@ -276,7 +271,6 @@ class EndToEndCapacityTests(TestCase):
         att3 = User.objects.create_user("att3", "a3@test.com", "Test@1234")
         for u in [att1, att2, att3]:
             assign_role(u, "attendee")
-            UserProfile.objects.create(user=u)
 
         c1, c2, c3 = Client(), Client(), Client()
         c1.login(username="att1", password="Test@1234")
@@ -316,7 +310,6 @@ class EndToEndCapacityTests(TestCase):
     def test_duplicate_reserve_returns_error(self):
         att = User.objects.create_user("dup", "dup@test.com", "Test@1234")
         assign_role(att, "attendee")
-        UserProfile.objects.create(user=att)
         c = Client()
         c.login(username="dup", password="Test@1234")
 
@@ -335,10 +328,8 @@ class EndToEndNotificationFlowTests(TestCase):
     def setUp(self):
         self.org = User.objects.create_user("org_nf", "org@test.com", "Test@1234")
         assign_role(self.org, "organizer")
-        UserProfile.objects.create(user=self.org)
         self.att = User.objects.create_user("att_nf", "att@test.com", "Test@1234")
         assign_role(self.att, "attendee")
-        UserProfile.objects.create(user=self.att)
         self.event = Event.objects.create(
             title="Notification Test Event",
             description="Testing notifs",
@@ -430,7 +421,7 @@ class EndToEndProfileTests(TestCase):
         user = User.objects.get(username="profile_user")
         self.assertEqual(user.first_name, "Marco")
         self.assertEqual(user.last_name, "Silva")
-        self.assertEqual(user.profile.bio, "I love events!")
+        self.assertEqual(user.bio, "I love events!")
 
         # View own profile page
         response = c.get(reverse("profile"))

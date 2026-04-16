@@ -1,14 +1,16 @@
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ..models import (
-    Category, Event, Favorite, Notification, Reservation, Review, UserProfile,
+    Category, Event, Favorite, Notification, Reservation, Review,
 )
 from ..services.booking import reserve
 from ..services.review import add_review
 from ..services.favorite import toggle_favorite
+
+User = get_user_model()
 
 
 class SoftDeleteModelTests(TestCase):
@@ -73,13 +75,10 @@ class SoftDeleteModelTests(TestCase):
         self.category.restore()
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
 
-    # ── UserProfile soft delete ──────────────────────────────────────
-
-    def test_userprofile_soft_delete(self):
-        profile = UserProfile.objects.create(user=self.organizer)
-        profile.delete()
-        self.assertFalse(UserProfile.objects.filter(user=self.organizer).exists())
-        self.assertTrue(UserProfile.all_objects.filter(user=self.organizer).exists())
+    def test_category_hard_delete(self):
+        pk = self.category.pk
+        self.category.hard_delete()
+        self.assertFalse(Category.all_objects.filter(pk=pk).exists())
 
     # ── Reservation soft delete & re-reserve ─────────────────────────
 
@@ -88,6 +87,12 @@ class SoftDeleteModelTests(TestCase):
         reservation.delete()
         self.assertFalse(Reservation.objects.filter(pk=reservation.pk).exists())
         self.assertTrue(Reservation.all_objects.filter(pk=reservation.pk).exists())
+
+    def test_reservation_hard_delete(self):
+        reservation, _ = reserve(self.attendee, self.event)
+        pk = reservation.pk
+        reservation.hard_delete()
+        self.assertFalse(Reservation.all_objects.filter(pk=pk).exists())
 
     def test_reserve_restores_soft_deleted_reservation(self):
         reservation, _ = reserve(self.attendee, self.event)
@@ -107,6 +112,13 @@ class SoftDeleteModelTests(TestCase):
         self.assertFalse(Favorite.objects.filter(pk=fav.pk).exists())
         self.assertTrue(Favorite.all_objects.filter(pk=fav.pk).exists())
 
+    def test_favorite_hard_delete(self):
+        toggle_favorite(self.attendee, self.event)
+        fav = Favorite.objects.get(user=self.attendee, event=self.event)
+        pk = fav.pk
+        fav.hard_delete()
+        self.assertFalse(Favorite.all_objects.filter(pk=pk).exists())
+
     def test_toggle_favorite_restores_soft_deleted(self):
         toggle_favorite(self.attendee, self.event)  # add
         toggle_favorite(self.attendee, self.event)  # remove (soft delete)
@@ -122,6 +134,13 @@ class SoftDeleteModelTests(TestCase):
         review.delete()
         self.assertFalse(Review.objects.filter(pk=review.pk).exists())
         self.assertTrue(Review.all_objects.filter(pk=review.pk).exists())
+
+    def test_review_hard_delete(self):
+        Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
+        review, _ = add_review(self.attendee, self.event, 5, "Great!")
+        pk = review.pk
+        review.hard_delete()
+        self.assertFalse(Review.all_objects.filter(pk=pk).exists())
 
     def test_add_review_restores_soft_deleted(self):
         Reservation.objects.create(user=self.attendee, event=self.event, status="confirmed")
@@ -145,6 +164,28 @@ class SoftDeleteModelTests(TestCase):
         notif.delete()
         self.assertFalse(Notification.objects.filter(pk=notif.pk).exists())
         self.assertTrue(Notification.all_objects.filter(pk=notif.pk).exists())
+
+    def test_notification_restore(self):
+        notif = Notification.objects.create(
+            recipient=self.attendee,
+            notification_type="reservation",
+            title="Test",
+            message="msg",
+        )
+        notif.delete()
+        notif.restore()
+        self.assertTrue(Notification.objects.filter(pk=notif.pk).exists())
+
+    def test_notification_hard_delete(self):
+        notif = Notification.objects.create(
+            recipient=self.attendee,
+            notification_type="reservation",
+            title="Test",
+            message="msg",
+        )
+        pk = notif.pk
+        notif.hard_delete()
+        self.assertFalse(Notification.all_objects.filter(pk=pk).exists())
 
     # ── UniqueConstraint allows re-creation after soft delete ────────
 

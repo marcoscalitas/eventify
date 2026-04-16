@@ -1,12 +1,14 @@
 import json
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from rolepermissions.roles import assign_role
 
-from ..models import Category, Event, Notification, Reservation, UserProfile
+from ..models import Category, Event, Notification, Reservation
+
+User = get_user_model()
 
 
 @override_settings(RATELIMIT_ENABLE=False)
@@ -17,8 +19,6 @@ class APITests(TestCase):
         self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         assign_role(self.attendee, "attendee")
         assign_role(self.organizer, "organizer")
-        UserProfile.objects.create(user=self.attendee)
-        UserProfile.objects.create(user=self.organizer)
         self.category = Category.objects.create(name="Music")
         self.event = Event.objects.create(
             title="Concert",

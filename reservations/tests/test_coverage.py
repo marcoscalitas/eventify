@@ -4,7 +4,7 @@ from io import BytesIO
 from unittest.mock import patch
 
 from django.contrib.admin.sites import AdminSite
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import RequestFactory, TestCase, override_settings
@@ -16,10 +16,12 @@ from ..admin import (
 )
 from ..forms.validators import validate_file_size
 from ..models import (
-    Category, Event, Favorite, Notification, Reservation, Review, UserProfile,
+    Category, Event, Favorite, Notification, Reservation, Review,
 )
 from ..serializers import EventSerializer
 from ..services.booking import cancel_reservation, reserve
+
+User = get_user_model()
 
 
 class ValidateFileSizeTests(TestCase):
@@ -94,8 +96,7 @@ class ModelStrTests(TestCase):
         self.assertIn("Test", str(n))
 
     def test_userprofile_str(self):
-        profile = UserProfile.objects.create(user=self.att)
-        self.assertEqual(str(profile), "att")
+        self.assertEqual(str(self.att), "att")
 
 
 class SoftDeleteQuerySetExtraTests(TestCase):
@@ -228,7 +229,6 @@ class DecoratorAjax403Tests(TestCase):
     def setUp(self):
         self.att = User.objects.create_user("att", "a@t.com", "Test@1234")
         assign_role(self.att, "attendee")
-        UserProfile.objects.create(user=self.att)
 
     def test_role_required_ajax_returns_json_403(self):
         self.client.login(username="att", password="Test@1234")
@@ -295,7 +295,6 @@ class EditEventInvalidFormTests(TestCase):
     def setUp(self):
         self.org = User.objects.create_user("org", "o@t.com", "Test@1234")
         assign_role(self.org, "organizer")
-        UserProfile.objects.create(user=self.org)
         self.event = Event.objects.create(
             title="E", description="D", organizer=self.org,
             venue="L", start_date=date.today() + timedelta(days=7),
@@ -323,10 +322,8 @@ class NotifyEventUpdatedTests(TestCase):
     def test_notify_event_updated_with_attendees(self):
         org = User.objects.create_user("org", "o@t.com", "Test@1234")
         assign_role(org, "organizer")
-        UserProfile.objects.create(user=org)
         att = User.objects.create_user("att", "a@t.com", "Test@1234")
         assign_role(att, "attendee")
-        UserProfile.objects.create(user=att)
         event = Event.objects.create(
             title="E", description="D", organizer=org,
             venue="L", start_date=date.today() + timedelta(days=7),
@@ -366,7 +363,6 @@ class RegisterIntegrityErrorTests(TestCase):
 class ProfileAvatarUploadTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("att", "a@t.com", "Test@1234")
-        UserProfile.objects.create(user=self.user)
 
     def _make_image(self):
         from PIL import Image
@@ -386,5 +382,5 @@ class ProfileAvatarUploadTests(TestCase):
             "avatar": self._make_image(),
         })
         self.assertEqual(r.status_code, 302)
-        profile = UserProfile.objects.get(user=self.user)
-        self.assertTrue(profile.avatar)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.avatar)

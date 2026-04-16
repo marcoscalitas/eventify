@@ -1,13 +1,15 @@
 import json
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from rolepermissions.roles import assign_role
 
-from ..models import Category, Event, Review, UserProfile
+from ..models import Category, Event, Review
 from ..services.booking import reserve
+
+User = get_user_model()
 
 
 @override_settings(RATELIMIT_ENABLE=False)
@@ -20,8 +22,6 @@ class BruteViewValidationTests(TestCase):
         self.attendee = User.objects.create_user("att", "att@t.com", "Test@1234")
         assign_role(self.organizer, "organizer")
         assign_role(self.attendee, "attendee")
-        UserProfile.objects.create(user=self.organizer)
-        UserProfile.objects.create(user=self.attendee)
         self.category = Category.objects.create(name="Music")
 
     # ── Register view ────────────────────────────────────────
@@ -137,8 +137,8 @@ class BruteViewValidationTests(TestCase):
             "email": "ok@ok.com", "bio": "x" * 501,
         })
         self.assertEqual(r.status_code, 200)
-        profile = UserProfile.objects.get(user=self.attendee)
-        self.assertNotEqual(len(profile.bio), 501)
+        self.attendee.refresh_from_db()
+        self.assertNotEqual(len(self.attendee.bio), 501)
 
     def test_profile_post_valid_accepted(self):
         self.client.login(username="att", password="Test@1234")
@@ -252,8 +252,6 @@ class PageViewTests(TestCase):
         self.attendee = User.objects.create_user("attendee", "att@test.com", "Test@1234")
         assign_role(self.attendee, "attendee")
         assign_role(self.organizer, "organizer")
-        UserProfile.objects.create(user=self.attendee)
-        UserProfile.objects.create(user=self.organizer)
         self.event = Event.objects.create(
             title="Concert",
             description="A great concert",

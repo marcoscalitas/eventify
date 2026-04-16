@@ -1,8 +1,9 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import UserProfile
+User = get_user_model()
+
 
 
 class AuthTests(TestCase):
@@ -60,7 +61,6 @@ class AjaxAuthTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user("testuser", "test@test.com", "Test@1234")
-        UserProfile.objects.create(user=self.user)
 
     # ---- Login AJAX ----
 

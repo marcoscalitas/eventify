@@ -1,10 +1,12 @@
 from datetime import date, time, timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ..models import Event, Notification
 from ..services.booking import reserve
+
+User = get_user_model()
 
 
 class NotificationTests(TestCase):
