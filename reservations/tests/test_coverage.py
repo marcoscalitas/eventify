@@ -95,7 +95,7 @@ class ModelStrTests(TestCase):
         )
         self.assertIn("Test", str(n))
 
-    def test_userprofile_str(self):
+    def test_user_str(self):
         self.assertEqual(str(self.att), "att")
 
 
