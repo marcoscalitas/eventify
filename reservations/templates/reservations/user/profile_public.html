@@ -5,16 +5,16 @@
 {% block body %}
 <div class="profile">
     <div class="profile__header">
-        {% if user_profile.avatar %}
-            <img src="{{ user_profile.avatar.url }}" alt="{{ profile_user.username }}" class="profile__avatar">
+        {% if profile_user.avatar %}
+            <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}" class="profile__avatar">
         {% else %}
             <div class="profile__avatar--placeholder">{{ profile_user.username|first|upper }}</div>
         {% endif %}
         <div class="profile__info">
             <h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1>
             <p class="profile__username">@{{ profile_user.username }}</p>
-            {% if user_profile.bio %}
-                <p class="profile__bio">{{ user_profile.bio }}</p>
+            {% if profile_user.bio %}
+                <p class="profile__bio">{{ profile_user.bio }}</p>
             {% endif %}
         </div>
     </div>

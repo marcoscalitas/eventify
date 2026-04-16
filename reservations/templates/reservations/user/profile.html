@@ -24,16 +24,20 @@
         </div>
         <div class="form-card__group">
             <label for="avatar">Avatar</label>
-            {% if user_profile.avatar %}
+            {% if user.avatar %}
                 <div class="avatar-preview">
-                    <img src="{{ user_profile.avatar.url }}" alt="Current avatar" class="profile__avatar--small">
+                    <img src="{{ user.avatar.url }}" alt="Current avatar" class="profile__avatar--small">
                 </div>
             {% endif %}
             <input type="file" id="avatar" name="avatar" accept="image/*">
         </div>
         <div class="form-card__group">
             <label for="bio">Bio</label>
-            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself...">{{ user_profile.bio }}</textarea>
+            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself...">{{ user.bio }}</textarea>
+        </div>
+        <div class="form-card__group">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" value="{{ user.phone }}" placeholder="Your phone number">
         </div>
         <button type="submit" class="btn btn--primary">Save Changes</button>
     </form>
