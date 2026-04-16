@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
@@ -9,7 +8,7 @@ from .event import Event
 
 
 class Review(models.Model):
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="reviews")
     event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="reviews")
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]

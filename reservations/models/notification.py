@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .base import SoftDeleteManager, AllObjectsManager
@@ -15,7 +14,7 @@ class Notification(models.Model):
         ("event_reminder", "Event Reminder"),
     ]
 
-    recipient = models.ForeignKey(User, on_delete=models.PROTECT, related_name="notifications")
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="notifications")
     notification_type = models.CharField(max_length=30, choices=TYPES)
     title = models.CharField(max_length=200)
     message = models.TextField()

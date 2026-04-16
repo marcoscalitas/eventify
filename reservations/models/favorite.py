@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .base import SoftDeleteManager, AllObjectsManager
@@ -8,7 +7,7 @@ from .event import Event
 
 
 class Favorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="favorites")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="favorites")
     event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="favorites")
     deleted_at = models.DateTimeField(null=True, blank=True, default=None, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)

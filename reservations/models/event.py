@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -26,7 +25,7 @@ class Event(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
     )
-    organizer = models.ForeignKey(User, on_delete=models.PROTECT, related_name="organized_events")
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="organized_events")
     venue = models.CharField(max_length=255)
     address = models.CharField(max_length=500, blank=True, default="")
     start_date = models.DateField()

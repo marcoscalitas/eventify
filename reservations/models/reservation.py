@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .base import SoftDeleteManager, AllObjectsManager
@@ -15,7 +14,7 @@ class Reservation(models.Model):
         (CANCELLED, "Cancelled"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="reservations")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="reservations")
     event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name="reservations")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=CONFIRMED, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True, default=None, db_index=True)
