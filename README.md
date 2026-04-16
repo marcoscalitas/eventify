@@ -55,7 +55,7 @@ The project includes a comprehensive test suite with **45 tests** across 7 test 
 
 ### `reservations/models/` — Data Models (Package)
 - **`__init__.py`**: Re-exports all models
-- **`user.py`**: `UserProfile` — extends Django User with bio and avatar (OneToOneField)
+- **`user.py`**: `User` — custom user model extending AbstractUser with bio, avatar, and phone fields
 - **`category.py`**: `Category` — event classification
 - **`event.py`**: `Event` — full event data with `spots_left`, `average_rating`, `reserve()`, `add_review()`, `toggle_favorite()` methods
 - **`reservation.py`**: `Reservation` — user-event link with confirmed/cancelled status and `cancel()` method
