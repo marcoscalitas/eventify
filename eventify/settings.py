@@ -131,6 +131,9 @@ LOGOUT_REDIRECT_URL = '/'
 # django-role-permissions
 ROLEPERMISSIONS_MODULE = 'reservations.roles'
 
+# Custom User Model
+AUTH_USER_MODEL = 'reservations.User'
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

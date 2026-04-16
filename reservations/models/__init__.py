@@ -1,4 +1,4 @@
-from .user import UserProfile
+from .user import User
 from .category import Category
 from .event import Event
 from .reservation import Reservation
@@ -7,7 +7,7 @@ from .favorite import Favorite
 from .notification import Notification
 
 __all__ = [
-    "UserProfile",
+    "User",
     "Category",
     "Event",
     "Reservation",
