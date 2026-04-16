@@ -1,7 +1,8 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils import timezone
 
-from .models import UserProfile, Category, Event, Reservation, Review, Favorite, Notification
+from .models import User, Category, Event, Reservation, Review, Favorite, Notification
 
 
 class SoftDeleteAdmin(admin.ModelAdmin):
@@ -20,12 +21,14 @@ class SoftDeleteAdmin(admin.ModelAdmin):
         queryset.update(deleted_at=None)
 
 
-@admin.register(UserProfile)
-class UserProfileAdmin(SoftDeleteAdmin):
-    list_display = ("user", "gender", "phone", "location", "is_deleted")
-    list_filter = ("gender", "deleted_at")
-    search_fields = ("user__username",)
-    actions = ["restore_selected"]
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ("Extra", {"fields": ("bio", "avatar", "phone")}),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ("Extra", {"fields": ("bio", "avatar", "phone")}),
+    )
 
 
 @admin.register(Category)
