@@ -1,12 +1,12 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from rolepermissions.roles import assign_role
 
-from ..models import UserProfile
 from ..forms import LoginForm, RegisterForm
+
+User = get_user_model()
 
 
 def _is_ajax(request):
@@ -76,7 +76,6 @@ def register(request):
     except IntegrityError:
         return _error_response(request, ajax, _REGISTER_TEMPLATE, "Username already taken.")
 
-    UserProfile.objects.create(user=user)
     assign_role(user, form.cleaned_data["role"])
 
     login(request, user)
